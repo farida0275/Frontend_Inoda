@@ -26,7 +26,6 @@ import ProfileJuri from "./pages/Profile.jsx";
 function App() {
   return (
     <Router>
-      <SplashVideo once={true} />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/berita/:id" element={<DetailBerita />} />
