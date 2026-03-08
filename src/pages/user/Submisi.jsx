@@ -9,7 +9,7 @@ import {
 import DetailSubmissionModal from "../../components/LihatDetail.jsx";
 
 const API_URL =
-  import.meta.env.VITE_API_URL ;
+  import.meta.env.VITE_API_URL;
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -45,7 +45,7 @@ const SubmissionsPage = () => {
           throw new Error("Token login tidak ditemukan. Silakan login ulang.");
         }
 
-        const response = await fetch(`${API_URL}/data-peserta/saya`, {
+        const response = await fetch(`${API_URL}/data-peserta/my-submissions`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

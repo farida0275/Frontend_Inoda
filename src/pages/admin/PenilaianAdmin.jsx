@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Eye, Star, X } from "lucide-react";
 import DetailSubmissionModal from "../../components/LihatDetail.jsx";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const SLOT_TABS = [
   { key: 1, label: "Slot 1" },
@@ -40,6 +39,93 @@ const SmallPill = ({ active, children, onClick }) => (
     {children}
   </button>
 );
+
+const debugFetch = async (url, options, label) => {
+  console.group(`[${label}] FETCH START`);
+  console.log("URL:", url);
+  console.log("Method:", options?.method || "GET");
+  console.log("Headers:", options?.headers || {});
+  if (options?.body) {
+    console.log("Body:", options.body);
+  }
+
+  const response = await fetch(url, options);
+
+  console.log("Final URL:", response.url);
+  console.log("Status:", response.status);
+  console.log("OK:", response.ok);
+  console.log("Content-Type:", response.headers.get("content-type"));
+  console.groupEnd();
+
+  return response;
+};
+
+const parseJsonSafe = async (response, label) => {
+  const text = await response.text();
+  const contentType = response.headers.get("content-type") || "";
+
+  if (!contentType.includes("application/json")) {
+    console.error(`[${label}] Response bukan JSON`, {
+      url: response.url,
+      status: response.status,
+      contentType,
+      bodyPreview: text.slice(0, 500),
+      fullBody: text,
+    });
+
+    throw new Error(
+      `${label} tidak mengembalikan JSON. Status ${response.status}. Cek console untuk detail response.`
+    );
+  }
+
+  try {
+    const parsed = JSON.parse(text);
+    console.log(`[${label}] JSON OK`, parsed);
+    return parsed;
+  } catch (err) {
+    console.error(`[${label}] JSON parse error`, {
+      url: response.url,
+      status: response.status,
+      contentType,
+      bodyPreview: text.slice(0, 500),
+      fullBody: text,
+    });
+
+    throw new Error(
+      `${label} mengembalikan format JSON yang tidak valid. Cek console untuk detail response.`
+    );
+  }
+};
+
+const safeFetchJson = async ({
+  url,
+  options,
+  label,
+  fallbackData = [],
+  silent404 = false,
+}) => {
+  const response = await debugFetch(url, options, label);
+
+  if (silent404 && response.status === 404) {
+    console.warn(`[${label}] endpoint tidak ditemukan, pakai fallback kosong.`);
+    return {
+      ok: true,
+      status: 404,
+      json: {
+        message: `${label} endpoint tidak ditemukan, fallback digunakan`,
+        data: fallbackData,
+      },
+    };
+  }
+
+  const json = await parseJsonSafe(response, label);
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    json,
+  };
+};
 
 const NilaiModal = ({
   open,
@@ -228,6 +314,7 @@ const PenilaianAdmin = () => {
 
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState("");
+  const [warningMessage, setWarningMessage] = useState("");
 
   const token = localStorage.getItem("token");
 
@@ -235,48 +322,70 @@ const PenilaianAdmin = () => {
     try {
       setLoading(true);
       setServerError("");
+      setWarningMessage("");
 
       if (!token) {
         throw new Error("Token login tidak ditemukan. Silakan login ulang.");
       }
 
-      const [inovasiRes, pesertaRes, penilaianRes, penugasanRes] =
+      const [inovasiResult, pesertaResult, penilaianResult, penugasanResult] =
         await Promise.all([
-          fetch(`${API_URL}/inovasi`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
+          safeFetchJson({
+            url: `${API_URL}/inovasi`,
+            options: {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
             },
+            label: "INOVASI",
           }),
-          fetch(`${API_URL}/data-peserta`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+
+          safeFetchJson({
+            url: `${API_URL}/data-peserta`,
+            options: {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
             },
+            label: "DATA PESERTA",
           }),
-          fetch(`${API_URL}/penilaian`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+
+          safeFetchJson({
+            url: `${API_URL}/penilaian`,
+            options: {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
             },
+            label: "PENILAIAN",
           }),
-          fetch(`${API_URL}/penugasan-juri`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+
+          safeFetchJson({
+            url: `${API_URL}/penugasan-juri`,
+            options: {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
             },
+            label: "PENUGASAN JURI",
+            fallbackData: [],
+            silent404: true,
           }),
         ]);
 
-      const inovasiJson = await inovasiRes.json();
-      const pesertaJson = await pesertaRes.json();
-      const penilaianJson = await penilaianRes.json();
-      const penugasanJson = await penugasanRes.json();
+      const inovasiJson = inovasiResult.json;
+      const pesertaJson = pesertaResult.json;
+      const penilaianJson = penilaianResult.json;
+      const penugasanJson = penugasanResult.json;
 
-      if (!inovasiRes.ok) {
+      if (!inovasiResult.ok) {
         throw new Error(
           inovasiJson?.errors?.join(", ") ||
             inovasiJson?.message ||
@@ -284,7 +393,7 @@ const PenilaianAdmin = () => {
         );
       }
 
-      if (!pesertaRes.ok) {
+      if (!pesertaResult.ok) {
         throw new Error(
           pesertaJson?.errors?.join(", ") ||
             pesertaJson?.message ||
@@ -292,7 +401,7 @@ const PenilaianAdmin = () => {
         );
       }
 
-      if (!penilaianRes.ok) {
+      if (!penilaianResult.ok) {
         throw new Error(
           penilaianJson?.errors?.join(", ") ||
             penilaianJson?.message ||
@@ -300,11 +409,17 @@ const PenilaianAdmin = () => {
         );
       }
 
-      if (!penugasanRes.ok) {
+      if (!penugasanResult.ok) {
         throw new Error(
           penugasanJson?.errors?.join(", ") ||
             penugasanJson?.message ||
             "Gagal mengambil data penugasan."
+        );
+      }
+
+      if (penugasanResult.status === 404) {
+        setWarningMessage(
+          "Endpoint penugasan juri belum tersedia di backend. Data penugasan sementara dianggap kosong."
         );
       }
 
@@ -441,22 +556,26 @@ const PenilaianAdmin = () => {
         throw new Error("Token login tidak ditemukan. Silakan login ulang.");
       }
 
-      const response = await fetch(`${API_URL}/penilaian/admin`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const response = await debugFetch(
+        `${API_URL}/penilaian/admin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            peserta_id: Number(rowNilai.peserta_id),
+            inovasi_id: Number(rowNilai.inovasi_id),
+            slot_penilai: Number(rowNilai.slotPenilai),
+            skor: Number(skor),
+            catatan: catatan || "",
+          }),
         },
-        body: JSON.stringify({
-          peserta_id: Number(rowNilai.peserta_id),
-          inovasi_id: Number(rowNilai.inovasi_id),
-          slot_penilai: Number(rowNilai.slotPenilai),
-          skor: Number(skor),
-          catatan: catatan || "",
-        }),
-      });
+        "SAVE PENILAIAN ADMIN"
+      );
 
-      const result = await response.json();
+      const result = await parseJsonSafe(response, "SAVE PENILAIAN ADMIN");
 
       if (!response.ok) {
         throw new Error(
@@ -525,6 +644,14 @@ const PenilaianAdmin = () => {
             </div>
           </div>
 
+          {warningMessage && (
+            <div className="px-5 pt-4">
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+                {warningMessage}
+              </div>
+            </div>
+          )}
+
           {serverError && (
             <div className="px-5 pt-4">
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -585,7 +712,9 @@ const PenilaianAdmin = () => {
 
                       <td className="px-5 py-4 text-slate-700">{row.urusan}</td>
 
-                      <td className="px-5 py-4 text-slate-700">{row.tahapan}</td>
+                      <td className="px-5 py-4 text-slate-700">
+                        {row.tahapan}
+                      </td>
 
                       <td className="px-5 py-4 text-slate-700">
                         {row.assigned ? (
@@ -606,8 +735,7 @@ const PenilaianAdmin = () => {
                           <button
                             type="button"
                             onClick={() => handleDetail(row)}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold
-                                       border border-slate-200 bg-white hover:bg-slate-50 transition"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 transition"
                           >
                             <Eye className="h-4 w-4 text-slate-500" />
                             Lihat Detail
@@ -617,8 +745,7 @@ const PenilaianAdmin = () => {
                             type="button"
                             onClick={() => handleNilai(row)}
                             disabled={!row.assigned}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold
-                                       bg-purple-700 text-white hover:bg-purple-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-purple-700 text-white hover:bg-purple-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Star className="h-4 w-4" />
                             {row.skor !== null && row.skor !== undefined

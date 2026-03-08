@@ -11,7 +11,7 @@ const menuUser = [
   { to: "/Submisi", label: "Submisi Saya", icon: FileText },
 ];
 
-const UserSidebar = ({ onLogout }) => {
+const UserSidebar = ({ onLogout, onNavigate }) => {
   const [openLogoutModal, setOpenLogoutModal] = useState(false);
 
   const handleConfirmLogout = () => {
@@ -21,28 +21,27 @@ const UserSidebar = ({ onLogout }) => {
 
   return (
     <>
-      <aside className="w-64 min-h-screen bg-white border-r border-purple-100 shadow-md flex flex-col">
-        <div className="bg-purple-900 px-4 py-3 flex items-center gap-2">
+      <aside className="flex h-screen w-64 flex-col border-r border-purple-100 bg-white shadow-md">
+        <div className="flex items-center gap-2 bg-purple-900 px-4 py-3">
           <img
             src={logoakar}
             alt="Logo Akar Ngawi"
-            className="w-10 h-10 object-contain"
+            className="h-10 w-10 object-contain"
           />
           <img
             src={logo}
             alt="Logo Bappeda"
-            className="w-8 h-8 object-contain"
+            className="h-8 w-8 object-contain"
           />
-
           <div className="leading-tight">
-            <p className="text-white font-bold text-sm tracking-wide">BAPPEDA</p>
-            <p className="text-purple-200 text-xs font-medium">
+            <p className="text-sm font-bold tracking-wide text-white">BAPPEDA</p>
+            <p className="text-xs font-medium text-purple-200">
               KABUPATEN NGAWI
             </p>
           </div>
         </div>
 
-        <nav className="p-4 space-y-2 flex-1">
+        <nav className="flex-1 space-y-2 p-4">
           {menuUser.map((item) => {
             const Icon = item.icon;
 
@@ -51,11 +50,12 @@ const UserSidebar = ({ onLogout }) => {
                 key={item.to}
                 to={item.to}
                 end={item.end}
+                onClick={onNavigate}
                 className={({ isActive }) =>
                   [
-                    "group flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                    "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-purple-50 text-purple-700 border-r-4 border-purple-700"
+                      ? "border-r-4 border-purple-700 bg-purple-50 text-purple-700"
                       : "text-slate-700 hover:bg-purple-50",
                   ].join(" ")
                 }
@@ -74,11 +74,11 @@ const UserSidebar = ({ onLogout }) => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-purple-100">
+        <div className="border-t border-purple-100 p-4">
           <button
             type="button"
             onClick={() => setOpenLogoutModal(true)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-purple-900 text-white font-semibold hover:bg-purple-800 transition shadow-md"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-900 px-4 py-3 font-semibold text-white shadow-md transition hover:bg-purple-800"
           >
             <LogOut size={18} />
             Keluar

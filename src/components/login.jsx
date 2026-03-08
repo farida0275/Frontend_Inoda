@@ -8,8 +8,7 @@ import {
 } from "hugeicons-react";
 import { validateEmail } from "../utils/validator";
 
-const API_URL =
-  import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -60,6 +59,8 @@ const LoginPage = () => {
 
       if (user.role === "admin") {
         navigate("/admin");
+      } else if (user.role === "juri") {
+        navigate("/Juri");
       } else {
         navigate("/participant");
       }
