@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
 import logoakar from "../assets/logoakar.png";
 import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa6";
-import vidio from "../assets/vidio.mp4";
+import vidio from "../assets/Vidio.mp4";
 import { motion } from "framer-motion";
 import {
   Globe,
