@@ -3,7 +3,7 @@ import { Eye, Search } from "lucide-react";
 import DetailSubmissionModal from "../../components/LihatDetail.jsx";
 
 const API_URL =
-  import.meta.env.VITE_API_URL || "https://backend-inoda.vercel.app/api";
+  import.meta.env.VITE_API_URL ;
 
 const formatDate = (value) => {
   if (!value) return "-";

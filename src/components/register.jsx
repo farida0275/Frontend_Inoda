@@ -8,7 +8,7 @@ import {
   validatePassword,
 } from "../utils/validator";
 
-const API_BASE_URL = "https://backend-inoda.vercel.app/api/auth";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ const RegisterPage = () => {
       setServerError("");
       setServerSuccess("");
 
-      const response = await fetch(`${API_BASE_URL}/register`, {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,41 +73,41 @@ const RegisterPage = () => {
       <div className="w-full max-w-md">
         <Link
           to="/"
-          className="flex items-center gap-2 text-purple-900 hover:text-purple-700 mb-6 text-sm font-medium"
+          className="mb-6 flex items-center gap-2 text-sm font-medium text-purple-900 hover:text-purple-700"
         >
           <FiArrowLeft /> Kembali ke Beranda
         </Link>
 
-        <div className="bg-white/80 backdrop-blur-lg border border-purple-100 shadow-xl rounded-2xl p-8">
-          <h2 className="text-2xl font-bold text-center text-gray-800">
+        <div className="rounded-2xl border border-purple-100 bg-white/80 p-8 shadow-xl backdrop-blur-lg">
+          <h2 className="text-center text-2xl font-bold text-gray-800">
             Daftar Akun
           </h2>
-          <p className="text-center text-gray-500 text-sm mt-2">
+          <p className="mt-2 text-center text-sm text-gray-500">
             Buat akun untuk mengikuti lomba
           </p>
 
           {serverError && (
-            <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {serverError}
             </div>
           )}
 
           {serverSuccess && (
-            <div className="mt-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-600">
+            <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-600">
               {serverSuccess}
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 mt-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
             <div>
               <label className="text-sm font-medium text-gray-700">
                 Nama Lengkap
               </label>
-              <div className="mt-1 flex items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                <FiUser className="text-gray-400 mr-2" />
+              <div className="mt-1 flex items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                <FiUser className="mr-2 text-gray-400" />
                 <input
                   type="text"
-                  className="w-full outline-none bg-transparent"
+                  className="w-full bg-transparent outline-none"
                   placeholder="Nama peserta"
                   {...register("nama", {
                     validate: (value) => {
@@ -118,7 +118,7 @@ const RegisterPage = () => {
                 />
               </div>
               {errors.nama && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="mt-1 text-xs text-red-500">
                   {errors.nama.message}
                 </p>
               )}
@@ -126,11 +126,11 @@ const RegisterPage = () => {
 
             <div>
               <label className="text-sm font-medium text-gray-700">Email</label>
-              <div className="mt-1 flex items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                <FiMail className="text-gray-400 mr-2" />
+              <div className="mt-1 flex items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                <FiMail className="mr-2 text-gray-400" />
                 <input
                   type="email"
-                  className="w-full outline-none bg-transparent"
+                  className="w-full bg-transparent outline-none"
                   placeholder="email@gmail.com"
                   {...register("email", {
                     validate: (value) => {
@@ -141,7 +141,7 @@ const RegisterPage = () => {
                 />
               </div>
               {errors.email && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="mt-1 text-xs text-red-500">
                   {errors.email.message}
                 </p>
               )}
@@ -151,11 +151,11 @@ const RegisterPage = () => {
               <label className="text-sm font-medium text-gray-700">
                 Password
               </label>
-              <div className="mt-1 flex items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                <FiLock className="text-gray-400 mr-2" />
+              <div className="mt-1 flex items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                <FiLock className="mr-2 text-gray-400" />
                 <input
                   type="password"
-                  className="w-full outline-none bg-transparent"
+                  className="w-full bg-transparent outline-none"
                   placeholder="Masukkan password"
                   {...register("password", {
                     validate: (value) => {
@@ -166,7 +166,7 @@ const RegisterPage = () => {
                 />
               </div>
               {errors.password && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="mt-1 text-xs text-red-500">
                   {errors.password.message}
                 </p>
               )}
@@ -176,11 +176,11 @@ const RegisterPage = () => {
               <label className="text-sm font-medium text-gray-700">
                 Konfirmasi Password
               </label>
-              <div className="mt-1 flex items-center border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
-                <FiLock className="text-gray-400 mr-2" />
+              <div className="mt-1 flex items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500">
+                <FiLock className="mr-2 text-gray-400" />
                 <input
                   type="password"
-                  className="w-full outline-none bg-transparent"
+                  className="w-full bg-transparent outline-none"
                   placeholder="Ulangi password"
                   {...register("confirmPassword", {
                     required: "Konfirmasi password wajib diisi",
@@ -190,7 +190,7 @@ const RegisterPage = () => {
                 />
               </div>
               {errors.confirmPassword && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="mt-1 text-xs text-red-500">
                   {errors.confirmPassword.message}
                 </p>
               )}
@@ -199,17 +199,17 @@ const RegisterPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl text-white font-semibold bg-purple-900 hover:opacity-90 transition shadow-lg disabled:opacity-60"
+              className="w-full rounded-xl bg-purple-900 py-3 font-semibold text-white shadow-lg transition hover:opacity-90 disabled:opacity-60"
             >
               {loading ? "Sedang daftar..." : "Daftar"}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="mt-6 text-center text-sm text-gray-500">
             Sudah punya akun?{" "}
             <Link
               to="/login"
-              className="text-purple-900 font-medium hover:underline"
+              className="font-medium text-purple-900 hover:underline"
             >
               Masuk
             </Link>

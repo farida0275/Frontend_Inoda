@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { X, Check } from "lucide-react";
 
 const API_URL =
-  import.meta.env.VITE_API_URL || "https://backend-inoda.vercel.app/api";
+  import.meta.env.VITE_API_URL;
 
 const EditInovasi = ({ isOpen, onClose, inovasiData, onSuccess }) => {
   const [form, setForm] = useState({

@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { X, Check, UploadCloud } from "lucide-react";
 
 const API_URL =
-  import.meta.env.VITE_API_URL || "https://backend-inoda.vercel.app/api";
+  import.meta.env.VITE_API_URL ;
 
 const TambahBerita = ({ isOpen, onClose, onSuccess }) => {
   const fileInputRef = useRef(null);

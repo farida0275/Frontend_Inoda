@@ -9,7 +9,7 @@ import {
 import { validateEmail } from "../utils/validator";
 
 const API_URL =
-  import.meta.env.VITE_API_URL || "https://backend-inoda.vercel.app/api";
+  import.meta.env.VITE_API_URL;
 
 const LoginPage = () => {
   const navigate = useNavigate();

@@ -18,7 +18,7 @@ import TambahInovasi from "./Form/tambahInovasi";
 import EditInovasi from "./Form/editInovasi";
 
 const API_URL =
-  import.meta.env.VITE_API_URL || "https://backend-inoda.vercel.app/api";
+  import.meta.env.VITE_API_URL ;
 
 const TABS = [
   { key: "user", label: "User", icon: User },

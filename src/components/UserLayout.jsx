@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import UserSidebar from "./UserSidebar";
 
 const API_URL =
-  import.meta.env.VITE_API_URL || "https://backend-inoda.vercel.app/api";
+  import.meta.env.VITE_API_URL;
 
 const SIDEBAR_W = "w-64";
 const SIDEBAR_ML = "ml-64";
