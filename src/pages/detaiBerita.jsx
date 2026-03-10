@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa6";
+import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa6";
 
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -184,24 +184,24 @@ const DetailBerita = () => {
 
             <div className="flex items-center gap-3">
               <a
-                href="#"
+                href="https://www.facebook.com/Bappeda.Kabupaten.Ngawi/"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-purple-800 transition hover:scale-110 hover:text-blue-600"
               >
                 <FaFacebookF size={16} />
               </a>
 
               <a
-                href="#"
+                href="https://www.instagram.com/bappedangawi/"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-purple-800 transition hover:scale-110 hover:text-pink-500"
               >
                 <FaInstagram size={16} />
               </a>
 
               <a
-                href="#"
+                href="https://www.youtube.com/channel/UC16D3Jc6lDIhzB5Hh3pXm_A"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-purple-800 transition hover:scale-110 hover:text-black"
               >
-                <FaTiktok size={16} />
+                <FaYoutube size={16} />
               </a>
             </div>
           </div>

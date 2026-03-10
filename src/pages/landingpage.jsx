@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
 import logoakar from "../assets/logoakar.png";
-import { FaFacebookF, FaInstagram, FaTiktok } from "react-icons/fa6";
+import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa6";
 import vidio from "../assets/Vidio.mp4";
 import { motion } from "framer-motion";
 import {
@@ -790,22 +790,22 @@ const LandingPage = () => {
             <h4 className="mb-3 text-sm font-semibold">Sosial Media</h4>
             <div className="flex items-center gap-3">
              <a
-                href="#"
+                href="https://www.facebook.com/Bappeda.Kabupaten.Ngawi/"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-purple-800 hover:text-blue-600 hover:scale-110 transition"
               >
                 <FaFacebookF size={16} />
               </a>
               <a
-                href="#"
+                href="https://www.instagram.com/bappedangawi/"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-purple-800 hover:text-pink-500 hover:scale-110 transition"
               >
                 <FaInstagram size={16} />
               </a>
               <a
-                href="#"
+                href="https://www.youtube.com/channel/UC16D3Jc6lDIhzB5Hh3pXm_A"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-purple-800 hover:text-black hover:scale-110 transition"
               >
-                <FaTiktok size={16} />
+                <FaYoutube size={16} />
               </a>
             </div>
           </div>
