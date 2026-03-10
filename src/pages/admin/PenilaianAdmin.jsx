@@ -208,7 +208,7 @@ const NilaiModal = ({
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-bold text-slate-500">Nama Peserta</p>
               <p className="text-sm font-semibold text-slate-900">
-                {row?.namaPemda || "-"}
+                {row?.namaPeserta || "-"}
               </p>
 
               <p className="mt-3 text-xs font-bold text-slate-500">
@@ -454,7 +454,6 @@ const PenilaianAdmin = () => {
 
   useEffect(() => {
     fetchAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const currentInv = useMemo(() => {
@@ -469,9 +468,7 @@ const PenilaianAdmin = () => {
     if (!currentInv) return [];
 
     const pesertaFiltered = pesertaList.filter(
-      (item) =>
-        String(item.nama_inovasi || "").trim().toLowerCase() ===
-        String(currentInv.name || "").trim().toLowerCase()
+      (item) => String(item.kategori) === String(currentInv.id)
     );
 
     return pesertaFiltered.map((item) => {
@@ -495,14 +492,55 @@ const PenilaianAdmin = () => {
         id: item.id,
         peserta_id: item.id,
         inovasi_id: currentInv.id,
-        namaPemda: item.nama_pemda || "-",
+
+        // untuk tabel
+        namaPeserta: item.nama_inisiator || "-",
         namaInovasi: item.nama_inovasi || "-",
+        kategoriNama: currentInv.name || "-",
+        urusan: item.urusan_utama || "-",
+        tahapan: item.tahapan_inovasi || "-",
+        slotPenilai: activeSlot,
+        namaJuri: penugasan?.nama_juri || "-",
+        juri_id: penugasan?.juri_id || null,
+        assigned: !!penugasan,
+        skor:
+          nilai && nilai.skor !== undefined && nilai.skor !== null
+            ? Number(nilai.skor)
+            : null,
+        catatan: nilai?.catatan || "",
+        penilaian_id: nilai?.id || null,
+
+        // untuk DetailSubmissionModal / LihatDetail.jsx
+        kategori: item.kategori || "",
+        kategori_nama: currentInv.name || "-",
+        nama_inovasi: item.nama_inovasi || "-",
+        tahapan_inovasi: item.tahapan_inovasi || "-",
+        inisiator_inovasi: item.inisiator_inovasi || "-",
+        nama_inisiator: item.nama_inisiator || "-",
+        jenis_inovasi: item.jenis_inovasi || "-",
+        bentuk_inovasi: item.bentuk_inovasi || "-",
+        tematik: item.tematik || "-",
+        urusan_utama: item.urusan_utama || "-",
+        urusan_beririsan: item.urusan_beririsan || "-",
+        waktu_pengembangan: item.waktu_pengembangan || "",
+        waktu_uji_coba: item.waktu_uji_coba || "",
+        waktu_penerapan: item.waktu_penerapan || "",
+        rancangan_bangun: item.rancangan_bangun || "",
+        tujuan_inovasi: item.tujuan_inovasi || "",
+        manfaat_diperoleh: item.manfaat_diperoleh || "",
+        hasil_inovasi: item.hasil_inovasi || "",
+        anggaran_pdf: item.anggaran_pdf || "",
+        profil_bisnis_pdf: item.profil_bisnis_pdf || "",
+        dokumen_haki_pdf: item.dokumen_haki_pdf || "",
+        penghargaan_pdf: item.penghargaan_pdf || "",
+        proposal_pdf: item.proposal_pdf || "",
+
+        // opsional untuk tabel lama / kompatibilitas
         tahap: item.tahapan_inovasi || "-",
         inisiatorKelompok: item.inisiator_inovasi || "-",
         namaInisiator: item.nama_inisiator || "-",
         jenisInovasi: item.jenis_inovasi || "-",
         bentukInovasi: item.bentuk_inovasi || "-",
-        tematik: item.tematik || "-",
         urusanUtama: item.urusan_utama || "-",
         urusanIrisan: item.urusan_beririsan || "-",
         waktuInisiatif: formatDate(item.waktu_pengembangan),
@@ -513,23 +551,6 @@ const PenilaianAdmin = () => {
         tujuan: item.tujuan_inovasi || "",
         manfaat: item.manfaat_diperoleh || "",
         hasil: item.hasil_inovasi || "",
-        anggaran_pdf: item.anggaran_pdf || "",
-        profil_bisnis_pdf: item.profil_bisnis_pdf || "",
-        dokumen_haki_pdf: item.dokumen_haki_pdf || "",
-        penghargaan_pdf: item.penghargaan_pdf || "",
-        proposal_pdf: item.proposal_pdf || "",
-        urusan: item.urusan_utama || "-",
-        tahapan: item.tahapan_inovasi || "-",
-        skor:
-          nilai && nilai.skor !== undefined && nilai.skor !== null
-            ? Number(nilai.skor)
-            : null,
-        catatan: nilai?.catatan || "",
-        penilaian_id: nilai?.id || null,
-        slotPenilai: activeSlot,
-        namaJuri: penugasan?.nama_juri || "-",
-        juri_id: penugasan?.juri_id || null,
-        assigned: !!penugasan,
       };
     });
   }, [pesertaList, penilaianList, penugasanList, currentInv, activeSlot]);
@@ -665,10 +686,12 @@ const PenilaianAdmin = () => {
               <thead className="bg-slate-50 text-slate-700">
                 <tr className="border-b border-slate-200">
                   <th className="text-left font-bold px-5 py-3 w-14">#</th>
-                  <th className="text-left font-bold px-5 py-3">Nama Pemda</th>
+                  <th className="text-left font-bold px-5 py-3">Nama Peserta</th>
                   <th className="text-left font-bold px-5 py-3">Nama Inovasi</th>
+                  <th className="text-left font-bold px-5 py-3">Kategori</th>
                   <th className="text-left font-bold px-5 py-3">Urusan</th>
                   <th className="text-left font-bold px-5 py-3">Tahapan</th>
+                  <th className="text-left font-bold px-5 py-3">Waktu Inisiatif</th>
                   <th className="text-left font-bold px-5 py-3">Juri Slot</th>
                   <th className="text-left font-bold px-5 py-3 w-24">Skor</th>
                   <th className="text-left font-bold px-5 py-3 w-56">Aksi</th>
@@ -679,7 +702,7 @@ const PenilaianAdmin = () => {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={10}
                       className="px-5 py-10 text-center text-slate-500"
                     >
                       Memuat data...
@@ -688,7 +711,7 @@ const PenilaianAdmin = () => {
                 ) : rows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={10}
                       className="px-5 py-10 text-center text-slate-500"
                     >
                       Belum ada data untuk {currentInvLabel}.
@@ -703,17 +726,25 @@ const PenilaianAdmin = () => {
                       <td className="px-5 py-4 text-slate-600">{idx + 1}</td>
 
                       <td className="px-5 py-4 font-semibold text-slate-900">
-                        {row.namaPemda}
+                        {row.namaPeserta}
                       </td>
 
                       <td className="px-5 py-4 text-slate-700">
                         {row.namaInovasi}
                       </td>
 
+                      <td className="px-5 py-4 text-slate-700">
+                        {row.kategoriNama}
+                      </td>
+
                       <td className="px-5 py-4 text-slate-700">{row.urusan}</td>
 
                       <td className="px-5 py-4 text-slate-700">
                         {row.tahapan}
+                      </td>
+
+                      <td className="px-5 py-4 text-slate-700">
+                        {row.waktuInisiatif || "-"}
                       </td>
 
                       <td className="px-5 py-4 text-slate-700">

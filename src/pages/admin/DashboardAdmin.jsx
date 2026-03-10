@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Search,
-  Plus,
   Users,
   Globe,
   GraduationCap,
@@ -13,8 +11,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -31,8 +28,7 @@ const formatDate = (value) => {
 const includesText = (value, keyword) =>
   String(value || "").toLowerCase().includes(keyword.toLowerCase());
 
-const normalizeText = (value) =>
-  String(value || "").trim().toLowerCase();
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
 
 const getInovasiIcon = (name) => {
   const text = normalizeText(name);
@@ -81,10 +77,7 @@ const getInovasiIcon = (name) => {
     return Leaf;
   }
 
-  if (
-    text.includes("desa") ||
-    text.includes("bumdes")
-  ) {
+  if (text.includes("desa") || text.includes("bumdes")) {
     return Home;
   }
 
@@ -178,37 +171,56 @@ const AdminDashboard = () => {
     fetchDashboardData();
   }, []);
 
+  const kategoriMap = useMemo(() => {
+    const map = new Map();
+
+    inovasiList.forEach((item) => {
+      map.set(String(item.id), item.name || "-");
+    });
+
+    return map;
+  }, [inovasiList]);
+
+  const rowsWithKategori = useMemo(() => {
+    return rows.map((row) => ({
+      ...row,
+      kategori_nama: kategoriMap.get(String(row.kategori)) || "-",
+    }));
+  }, [rows, kategoriMap]);
+
   const filteredRows = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
-    if (!keyword) return rows;
+    if (!keyword) return rowsWithKategori;
 
-    return rows.filter((row) => {
+    return rowsWithKategori.filter((row) => {
       return (
-        includesText(row.nama_pemda, keyword) ||
+        includesText(row.nama_inisiator, keyword) ||
         includesText(row.nama_inovasi, keyword) ||
+        includesText(row.kategori_nama, keyword) ||
+        includesText(row.bentuk_inovasi, keyword) ||
         includesText(row.tahapan_inovasi, keyword) ||
         includesText(row.urusan_utama, keyword) ||
+        includesText(row.waktu_pengembangan, keyword) ||
         includesText(row.waktu_uji_coba, keyword) ||
         includesText(row.waktu_penerapan, keyword)
       );
     });
-  }, [rows, search]);
+  }, [rowsWithKategori, search]);
 
   const stats = useMemo(() => {
     const cards = [
       {
         id: "total-peserta",
         title: "Total Peserta",
-        value: rows.length,
+        value: rowsWithKategori.length,
         icon: Users,
       },
     ];
 
     const inovasiCards = inovasiList.map((inovasi) => {
-      const jumlahPeserta = rows.filter(
-        (item) =>
-          normalizeText(item.nama_inovasi) === normalizeText(inovasi.name)
+      const jumlahPeserta = rowsWithKategori.filter(
+        (item) => String(item.kategori) === String(inovasi.id)
       ).length;
 
       return {
@@ -220,10 +232,10 @@ const AdminDashboard = () => {
     });
 
     return [...cards, ...inovasiCards];
-  }, [inovasiList, rows]);
+  }, [inovasiList, rowsWithKategori]);
 
   return (
-    <div className="space-y-6 p-6 ">
+    <div className="space-y-6 p-6">
       <div>
         <h1 className="text-xl font-extrabold text-slate-900">
           Dashboard Indeks Inovasi Daerah
@@ -280,10 +292,13 @@ const AdminDashboard = () => {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
-              <th className="px-4 py-3 text-left">Nama Pemda</th>
+              <th className="px-4 py-3 text-left">Nama Peserta</th>
               <th className="px-4 py-3 text-left">Nama Inovasi</th>
+              <th className="px-4 py-3 text-left">Kategori</th>
+              <th className="px-4 py-3 text-left">Bentuk Inovasi</th>
               <th className="px-4 py-3 text-left">Tahapan</th>
               <th className="px-4 py-3 text-left">Urusan</th>
+              <th className="px-4 py-3 text-left">Waktu Inisiatif</th>
               <th className="px-4 py-3 text-left">Waktu Uji Coba</th>
               <th className="px-4 py-3 text-left">Waktu Penerapan</th>
             </tr>
@@ -292,17 +307,22 @@ const AdminDashboard = () => {
           <tbody>
             {loading ? (
               <tr className="border-t">
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
                   Memuat data...
                 </td>
               </tr>
             ) : filteredRows.length > 0 ? (
               filteredRows.map((row) => (
                 <tr key={row.id} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-3">{row.nama_pemda || "-"}</td>
+                  <td className="px-4 py-3">{row.nama_inisiator || "-"}</td>
                   <td className="px-4 py-3">{row.nama_inovasi || "-"}</td>
+                  <td className="px-4 py-3">{row.kategori_nama || "-"}</td>
+                  <td className="px-4 py-3">{row.bentuk_inovasi || "-"}</td>
                   <td className="px-4 py-3">{row.tahapan_inovasi || "-"}</td>
                   <td className="px-4 py-3">{row.urusan_utama || "-"}</td>
+                  <td className="px-4 py-3">
+                    {formatDate(row.waktu_pengembangan)}
+                  </td>
                   <td className="px-4 py-3">
                     {formatDate(row.waktu_uji_coba)}
                   </td>
@@ -313,7 +333,7 @@ const AdminDashboard = () => {
               ))
             ) : (
               <tr className="border-t">
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
                   Tidak ada data peserta.
                 </td>
               </tr>

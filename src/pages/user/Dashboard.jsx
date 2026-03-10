@@ -12,8 +12,7 @@ import {
   Search,
 } from "lucide-react";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -30,139 +29,173 @@ const formatDate = (value) => {
 const includesText = (value, keyword) =>
   String(value || "").toLowerCase().includes(keyword.toLowerCase());
 
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+
 const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState("Semua");
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState([]);
+  const [inovasiList, setInovasiList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState("");
 
   useEffect(() => {
-    const fetchDataPeserta = async () => {
+    const fetchDashboardData = async () => {
       try {
         setLoading(true);
         setServerError("");
 
         const token = localStorage.getItem("token");
 
-        const response = await fetch(`${API_URL}/data-peserta`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const [pesertaResponse, inovasiResponse] = await Promise.all([
+          fetch(`${API_URL}/data-peserta`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          fetch(`${API_URL}/inovasi`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }),
+        ]);
 
-        const result = await response.json();
+        const pesertaResult = await pesertaResponse.json();
+        const inovasiResult = await inovasiResponse.json();
 
-        if (!response.ok) {
+        if (!pesertaResponse.ok) {
           throw new Error(
-            result?.errors?.join(", ") ||
-              result?.message ||
+            pesertaResult?.errors?.join(", ") ||
+              pesertaResult?.message ||
               "Gagal mengambil data peserta."
           );
         }
 
-        const list = Array.isArray(result?.data) ? result.data : [];
-        setRows(list);
+        if (!inovasiResponse.ok) {
+          throw new Error(
+            inovasiResult?.errors?.join(", ") ||
+              inovasiResult?.message ||
+              "Gagal mengambil data inovasi."
+          );
+        }
+
+        const pesertaList = Array.isArray(pesertaResult?.data)
+          ? pesertaResult.data
+          : [];
+        const inovasiData = Array.isArray(inovasiResult?.data)
+          ? inovasiResult.data
+          : [];
+
+        setRows(pesertaList);
+        setInovasiList(inovasiData);
       } catch (error) {
-        console.error("Fetch data peserta error:", error);
+        console.error("Fetch dashboard error:", error);
         setServerError(
-          error.message || "Gagal mengambil data peserta dari server."
+          error.message || "Gagal mengambil data dashboard dari server."
         );
         setRows([]);
+        setInovasiList([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDataPeserta();
+    fetchDashboardData();
   }, []);
+
+  const kategoriMap = useMemo(() => {
+    const map = new Map();
+
+    inovasiList.forEach((item) => {
+      map.set(String(item.id), item.name || "-");
+    });
+
+    return map;
+  }, [inovasiList]);
+
+  const rowsWithKategori = useMemo(() => {
+    return rows.map((row) => ({
+      ...row,
+      kategori_nama: kategoriMap.get(String(row.kategori)) || "-",
+    }));
+  }, [rows, kategoriMap]);
 
   const filteredRows = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
-    if (!keyword) return rows;
+    if (!keyword) return rowsWithKategori;
 
-    return rows.filter((row) => {
+    return rowsWithKategori.filter((row) => {
       return (
-        includesText(row.nama_pemda, keyword) ||
+        includesText(row.nama_inisiator, keyword) ||
         includesText(row.nama_inovasi, keyword) ||
+        includesText(row.kategori_nama, keyword) ||
         includesText(row.tahapan_inovasi, keyword) ||
         includesText(row.urusan_utama, keyword) ||
+        includesText(row.waktu_pengembangan, keyword) ||
         includesText(row.waktu_uji_coba, keyword) ||
         includesText(row.waktu_penerapan, keyword)
       );
     });
-  }, [rows, search]);
+  }, [rowsWithKategori, search]);
 
   const stats = useMemo(() => {
-    const uniqueParticipants = new Set(
-      rows
-        .map((item) => item.nama_pemda)
-        .filter((item) => item && String(item).trim() !== "")
-    ).size;
+    const totalPeserta = rowsWithKategori.length;
 
-    const countByKeyword = (keywords) =>
-      rows.filter((item) => {
-        const source = [
-          item.nama_inovasi,
-          item.urusan_utama,
-          item.tematik,
-          item.bentuk_inovasi,
-          item.jenis_inovasi,
-        ]
-          .join(" ")
-          .toLowerCase();
+    const countByKategoriName = (targetNames) => {
+      const normalizedTargets = targetNames.map((item) => normalizeText(item));
 
-        return keywords.some((keyword) => source.includes(keyword));
-      }).length;
+      return rowsWithKategori.filter((item) =>
+        normalizedTargets.includes(normalizeText(item.kategori_nama))
+      ).length;
+    };
 
     return [
-      { title: "Jumlah Partisipan", value: uniqueParticipants, icon: Users },
+      {
+        title: "Total Peserta",
+        value: totalPeserta,
+        icon: Users,
+      },
       {
         title: "Inovasi Daerah",
-        value: countByKeyword(["daerah", "pemerintahan", "pelayanan publik"]),
+        value: countByKategoriName(["Inovasi Daerah"]),
         icon: Globe,
       },
       {
         title: "Inovasi Pendidikan",
-        value: countByKeyword(["pendidikan", "sekolah", "pembelajaran"]),
+        value: countByKategoriName(["Inovasi Pendidikan"]),
         icon: GraduationCap,
       },
       {
         title: "Inovasi Kesehatan",
-        value: countByKeyword(["kesehatan", "rumah sakit", "puskesmas"]),
+        value: countByKategoriName(["Inovasi Kesehatan"]),
         icon: HeartPulse,
       },
       {
         title: "Inovasi Berbasis Website",
-        value: countByKeyword(["website", "web", "digital", "aplikasi"]),
+        value: countByKategoriName(["Inovasi Berbasis Website"]),
         icon: Monitor,
       },
       {
         title: "Inovasi Agribisnis & Energi",
-        value: countByKeyword([
-          "agribisnis",
-          "energi",
-          "pertanian",
-          "peternakan",
-          "pangan",
-        ]),
+        value: countByKategoriName(["Inovasi Agribisnis & Energi"]),
         icon: Leaf,
       },
       {
         title: "Inovasi Sosial Budaya",
-        value: countByKeyword(["sosial", "budaya", "komunitas", "umkm"]),
+        value: countByKategoriName(["Inovasi Sosial Budaya"]),
         icon: Users,
       },
       {
         title: "Inovasi Desa",
-        value: countByKeyword(["desa", "bumdes"]),
+        value: countByKategoriName(["Inovasi Desa"]),
         icon: Home,
       },
     ];
-  }, [rows]);
+  }, [rowsWithKategori]);
 
   return (
     <div className="p-6 space-y-6">
@@ -218,10 +251,12 @@ const UserDashboard = () => {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
-              <th className="px-4 py-3 text-left">Nama Pemda</th>
+              <th className="px-4 py-3 text-left">Nama Peserta</th>
               <th className="px-4 py-3 text-left">Nama Inovasi</th>
+              <th className="px-4 py-3 text-left">Kategori</th>
               <th className="px-4 py-3 text-left">Tahapan</th>
               <th className="px-4 py-3 text-left">Urusan</th>
+              <th className="px-4 py-3 text-left">Waktu Inisiatif</th>
               <th className="px-4 py-3 text-left">Waktu Uji Coba</th>
               <th className="px-4 py-3 text-left">Waktu Penerapan</th>
             </tr>
@@ -230,17 +265,21 @@ const UserDashboard = () => {
           <tbody>
             {loading ? (
               <tr className="border-t">
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
                   Memuat data...
                 </td>
               </tr>
             ) : filteredRows.length > 0 ? (
               filteredRows.map((row) => (
                 <tr key={row.id} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-3">{row.nama_pemda || "-"}</td>
+                  <td className="px-4 py-3">{row.nama_inisiator || "-"}</td>
                   <td className="px-4 py-3">{row.nama_inovasi || "-"}</td>
+                  <td className="px-4 py-3">{row.kategori_nama || "-"}</td>
                   <td className="px-4 py-3">{row.tahapan_inovasi || "-"}</td>
                   <td className="px-4 py-3">{row.urusan_utama || "-"}</td>
+                  <td className="px-4 py-3">
+                    {formatDate(row.waktu_pengembangan)}
+                  </td>
                   <td className="px-4 py-3">
                     {formatDate(row.waktu_uji_coba)}
                   </td>
@@ -251,7 +290,7 @@ const UserDashboard = () => {
               ))
             ) : (
               <tr className="border-t">
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
                   Tidak ada data peserta.
                 </td>
               </tr>

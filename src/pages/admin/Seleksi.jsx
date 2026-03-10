@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const TABS = [
   { key: "all", label: "Semua" },
@@ -19,21 +18,13 @@ const stageLabel = (key) => {
 };
 
 const statusStyle = (status) => {
-  if (status === "Lolos")
+  if (status === "Lolos") {
     return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  if (status === "Tidak Lolos")
+  }
+  if (status === "Tidak Lolos") {
     return "bg-red-50 text-red-700 border-red-200";
+  }
   return "bg-amber-50 text-amber-700 border-amber-200";
-};
-
-const mapTahapanToSeleksi = (tahapan) => {
-  const value = String(tahapan || "").toLowerCase();
-
-  if (value === "inisiatif") return "administratif";
-  if (value === "uji coba") return "semifinal";
-  if (value === "penerapan") return "final";
-
-  return "administratif";
 };
 
 const formatScore = (value) => {
@@ -42,9 +33,11 @@ const formatScore = (value) => {
   return num.toFixed(2);
 };
 
-const mapStatusFromAverage = (score) => {
-  if (Number(score) > 0) return "Lolos";
-  return "Diproses";
+const getNextStage = (currentStage) => {
+  if (currentStage === "all") return "administratif";
+  if (currentStage === "administratif") return "semifinal";
+  if (currentStage === "semifinal") return "final";
+  return "final";
 };
 
 const SeleksiPeserta = () => {
@@ -83,8 +76,23 @@ const SeleksiPeserta = () => {
           }),
         ]);
 
-        const pesertaResult = await pesertaRes.json();
-        const penilaianResult = await penilaianRes.json();
+        const pesertaText = await pesertaRes.text();
+        const penilaianText = await penilaianRes.text();
+
+        let pesertaResult = {};
+        let penilaianResult = {};
+
+        try {
+          pesertaResult = JSON.parse(pesertaText);
+        } catch {
+          throw new Error("Response data peserta bukan JSON.");
+        }
+
+        try {
+          penilaianResult = JSON.parse(penilaianText);
+        } catch {
+          throw new Error("Response penilaian bukan JSON.");
+        }
 
         if (!pesertaRes.ok) {
           throw new Error(
@@ -123,12 +131,12 @@ const SeleksiPeserta = () => {
 
           return {
             id: item.id,
-            namaPeserta: item.nama_inisiator || "-",
+            namaInisiator: item.nama_inisiator || "-",
             namaInovasi: item.nama_inovasi || "-",
-            tahapSeleksi: mapTahapanToSeleksi(item.tahapan_inovasi),
+            tahapSeleksi: item.tahap_seleksi || "all",
             urusan: item.urusan_utama || "-",
             tglDaftar: item.created_at || "",
-            status: mapStatusFromAverage(rataRata3Juri),
+            status: item.status_seleksi || "Diproses",
             skor: rataRata3Juri,
           };
         });
@@ -148,21 +156,102 @@ const SeleksiPeserta = () => {
     fetchSeleksiData();
   }, []);
 
-  const handleStatusChange = (id, value) => {
-    setData((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, status: value } : item))
-    );
+  const handleStatusChange = async (id, value) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Token login tidak ditemukan. Silakan login ulang.");
+        return;
+      }
+
+      const currentRow = data.find((item) => item.id === id);
+      if (!currentRow) return;
+
+      let nextTahap = currentRow.tahapSeleksi;
+      let nextStatus = value;
+
+      // hanya naik tahap kalau pilih LOL0S
+      if (value === "Lolos") {
+        if (currentRow.tahapSeleksi === "final") {
+          nextTahap = "final";
+          nextStatus = "Lolos";
+        } else {
+          nextTahap = getNextStage(currentRow.tahapSeleksi);
+          nextStatus = "Diproses";
+        }
+      }
+
+      // kalau Diproses / Tidak Lolos => tetap di tahap sekarang
+      if (value === "Diproses") {
+        nextTahap = currentRow.tahapSeleksi;
+        nextStatus = "Diproses";
+      }
+
+      if (value === "Tidak Lolos") {
+        nextTahap = currentRow.tahapSeleksi;
+        nextStatus = "Tidak Lolos";
+      }
+
+      const response = await fetch(`${API_URL}/data-peserta/${id}/seleksi`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tahap_seleksi: nextTahap,
+          status_seleksi: nextStatus,
+        }),
+      });
+
+      const text = await response.text();
+      console.log("RAW RESPONSE SELEKSI:", text);
+
+      let result = {};
+      try {
+        result = JSON.parse(text);
+      } catch {
+        throw new Error(
+          `Response backend bukan JSON. Cek route /data-peserta/${id}/seleksi`
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          result?.errors?.join(", ") ||
+            result?.message ||
+            "Gagal mengubah status seleksi."
+        );
+      }
+
+      setData((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                tahapSeleksi: nextTahap,
+                status: nextStatus,
+              }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error("Update seleksi error:", error);
+      alert(error.message || "Gagal mengubah status seleksi.");
+    }
   };
 
   const filtered = useMemo(() => {
     const keyword = q.trim().toLowerCase();
 
     return data.filter((row) => {
-      const tabOk = activeTab === "all" ? true : row.tahapSeleksi === activeTab;
+      // TAB Semua hanya untuk stage "all"
+      const tabOk = row.tahapSeleksi === activeTab;
 
       const searchOk =
         !keyword ||
-        row.namaPeserta.toLowerCase().includes(keyword) ||
+        row.namaInisiator.toLowerCase().includes(keyword) ||
         row.namaInovasi.toLowerCase().includes(keyword);
 
       return tabOk && searchOk;
@@ -237,7 +326,7 @@ const SeleksiPeserta = () => {
             <thead className="bg-slate-50 text-slate-700">
               <tr className="border-t border-slate-200">
                 <th className="px-5 py-3 text-left w-14">#</th>
-                <th className="px-5 py-3 text-left">Nama Peserta</th>
+                <th className="px-5 py-3 text-left">Nama Pemda</th>
                 <th className="px-5 py-3 text-left">Nama Inovasi</th>
                 <th className="px-5 py-3 text-left">Tahapan</th>
                 <th className="px-5 py-3 text-left w-24">Skor</th>
@@ -272,7 +361,7 @@ const SeleksiPeserta = () => {
                   >
                     <td className="px-5 py-4 text-slate-600">{idx + 1}</td>
                     <td className="px-5 py-4 font-semibold text-slate-900">
-                      {row.namaPeserta}
+                      {row.namaInisiator}
                     </td>
                     <td className="px-5 py-4 text-slate-700">
                       {row.namaInovasi}
@@ -293,9 +382,9 @@ const SeleksiPeserta = () => {
                           row.status
                         )}`}
                       >
-                        <option>Diproses</option>
-                        <option>Lolos</option>
-                        <option>Tidak Lolos</option>
+                        <option value="Diproses">Diproses</option>
+                        <option value="Lolos">Lolos</option>
+                        <option value="Tidak Lolos">Tidak Lolos</option>
                       </select>
                     </td>
                   </tr>

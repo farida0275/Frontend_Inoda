@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,37 +10,75 @@ import {
   Upload01Icon as UploadIcon,
 } from "hugeicons-react";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const steps = [
   { id: 1, name: "Identitas & Data Inovasi", icon: UserIcon },
   { id: 2, name: "Narasi & Dokumen", icon: Upload01Icon },
 ];
 
-const bentukOptions = [
-  "Aplikasi",
-  "Layanan",
-  "Kebijakan",
-  "Prosedur",
-  "Lainnya",
+const astaCitaOptions = [
+  "Memperkokoh ideologi Pancasila, demokrasi, dan hak asasi manusia (HAM).",
+  "Memantapkan sistem pertahanan keamanan negara dan mendorong kemandirian bangsa melalui swasembada pangan, energi, air, ekonomi kreatif, ekonomi hijau, dan ekonomi biru.",
+  "Meningkatkan lapangan kerja yang berkualitas, mendorong kewirausahaan, mengembangkan industri kreatif, dan melanjutkan pengembangan infrastruktur.",
+  "Memperkuat pembangunan sumber daya manusia (SDM), sains, teknologi, pendidikan, kesehatan, prestasi olahraga, kesetaraan gender, serta penguatan peran perempuan, pemuda, dan penyandang disabilitas.",
+  "Melanjutkan hilirisasi dan industrialisasi untuk meningkatkan nilai tambah di dalam negeri.",
+  "Membangun dari desa dan dari bawah untuk pemerataan ekonomi dan pemberantasan kemiskinan.",
+  "Memperkuat reformasi politik, hukum, dan birokrasi, serta memperkuat pencegahan dan pemberantasan korupsi dan narkoba.",
+  "Memperkuat penyelarasan kehidupan yang harmonis dengan lingkungan, alam, dan budaya, serta peningkatan toleransi antarumat beragama untuk mencapai masyarakat yang adil dan makmur.",
 ];
 
-const tematikOptions = [
-  "Digitalisasi",
-  "Kesehatan",
+const urusanOptions = [
   "Pendidikan",
+  "Kesehatan",
+  "Pekerjaan Umum dan Penataan Ruang",
+  "Perumahan Rakyat dan Kawasan Permukiman",
+  "Ketenteraman, Ketertiban Umum, dan Perlindungan Masyarakat",
+  "Sosial",
+  "Tenaga Kerja",
+  "Pemberdayaan Perempuan dan Perlindungan Anak",
+  "Pangan",
+  "Pertanahan",
+  "Lingkungan Hidup",
+  "Administrasi Kependudukan dan Pencatatan Sipil",
+  "Pemberdayaan Masyarakat dan Desa",
+  "Pengendalian Penduduk dan Keluarga Berencana",
+  "Perhubungan",
+  "Komunikasi dan Informatika",
+  "Koperasi, Usaha Kecil, dan Menengah",
+  "Penanaman Modal",
+  "Kepemudaan dan Olahraga",
+  "Statistik",
+  "Persandian",
+  "Kebudayaan",
+  "Perpustakaan",
+  "Kearsipan",
+  "Kelautan dan Perikanan",
+  "Pariwisata",
   "Pertanian",
+  "Kehutanan",
+  "Energi dan Sumber Daya Mineral",
+  "Perdagangan",
+  "Perindustrian",
+  "Transmigrasi",
 ];
 
-const urusanUtamaOptions = ["Urusan A", "Urusan B", "Urusan C"];
-const urusanIrisanOptions = ["Irisan 1", "Irisan 2", "Irisan 3"];
+const bentukInovasiDaerahOptions = [
+  "Inovasi Tata Kelola Pemerintahan Daerah",
+  "Inovasi Pelayanan Publik",
+  "Inovasi bentuk lainnya sesuai bidang urusan pemerintahan yang menjadi kewenangan Daerah",
+];
 
 const MAX_2MB = 2 * 1024 * 1024;
 
 const FormDaftar = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+
+  const [kategoriOptions, setKategoriOptions] = useState([]);
+  const [loadingKategori, setLoadingKategori] = useState(false);
+  const [kategoriError, setKategoriError] = useState("");
+
   const navigate = useNavigate();
 
   const {
@@ -54,6 +92,11 @@ const FormDaftar = () => {
       tahap: "Inisiatif",
       inisiatorKelompok: "Kepala Daerah",
       jenisInovasi: "Digital",
+      kategoriInovasi: "",
+      bentukInovasiDaerah: "",
+      astaCita: "",
+      urusanUtama: "",
+      urusanIrisan: "",
       rancangBangun: "",
       tujuan: "",
       manfaat: "",
@@ -66,11 +109,52 @@ const FormDaftar = () => {
     mode: "onTouched",
   });
 
+  useEffect(() => {
+    const fetchKategoriOptions = async () => {
+      try {
+        setLoadingKategori(true);
+        setKategoriError("");
+
+        const response = await fetch(`${API_URL}/inovasi`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result?.errors?.join(", ") ||
+              result?.message ||
+              "Gagal mengambil data kategori inovasi."
+          );
+        }
+
+        const list = Array.isArray(result?.data) ? result.data : [];
+        setKategoriOptions(list);
+      } catch (error) {
+        console.error("Fetch kategori inovasi error:", error);
+        setKategoriError(
+          error.message || "Terjadi kesalahan saat mengambil kategori inovasi."
+        );
+        setKategoriOptions([]);
+      } finally {
+        setLoadingKategori(false);
+      }
+    };
+
+    fetchKategoriOptions();
+  }, []);
+
   const countWords = (text = "") => {
     return text.trim().split(/\s+/).filter(Boolean).length;
   };
 
   const selectedTahap = watch("tahap");
+  const selectedAstaCita = watch("astaCita");
+
   const tahapLevel = {
     Inisiatif: 1,
     "Uji Coba": 2,
@@ -79,14 +163,14 @@ const FormDaftar = () => {
 
   const stepFields = {
     1: [
-      "namaPemda",
+      "namaInisiator",
       "namaInovasi",
       "tahap",
       "inisiatorKelompok",
-      "namaInisiator",
       "jenisInovasi",
-      "bentukInovasi",
-      "tematik",
+      "kategoriInovasi",
+      "bentukInovasiDaerah",
+      "astaCita",
       "urusanUtama",
       "waktuInisiatif",
       "waktuUjiCoba",
@@ -135,14 +219,14 @@ const FormDaftar = () => {
 
       const formData = new FormData();
 
-      formData.append("nama_pemda", data.namaPemda);
+      formData.append("nama_inisiator", data.namaInisiator);
       formData.append("nama_inovasi", data.namaInovasi);
       formData.append("tahapan_inovasi", data.tahap);
       formData.append("inisiator_inovasi", data.inisiatorKelompok);
-      formData.append("nama_inisiator", data.namaInisiator);
       formData.append("jenis_inovasi", data.jenisInovasi);
-      formData.append("bentuk_inovasi", data.bentukInovasi);
-      formData.append("tematik", data.tematik);
+      formData.append("bentuk_inovasi", data.bentukInovasiDaerah);
+      formData.append("kategori", data.kategoriInovasi);
+      formData.append("tematik", data.astaCita);
       formData.append("urusan_utama", data.urusanUtama);
 
       if (data.urusanIrisan) {
@@ -274,19 +358,19 @@ const FormDaftar = () => {
               <div className="grid sm:grid-cols-2 gap-6">
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nama Pemda
+                    Nama Inisiator
                   </label>
 
                   <input
                     type="text"
-                    placeholder="Masukkan nama pemerintah daerah..."
+                    placeholder="Masukkan nama inisiator..."
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
-                    {...register("namaPemda", { required: "Wajib diisi" })}
+                    {...register("namaInisiator", { required: "Wajib diisi" })}
                   />
 
-                  {errors.namaPemda && (
+                  {errors.namaInisiator && (
                     <p className="text-xs text-red-500 mt-1">
-                      {errors.namaPemda.message}
+                      {errors.namaInisiator.message}
                     </p>
                   )}
                 </div>
@@ -382,23 +466,6 @@ const FormDaftar = () => {
 
                 <div>
                   <label className="text-sm font-medium text-gray-700">
-                    Nama Inisiator
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Masukkan nama inisiator..."
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
-                    {...register("namaInisiator", { required: "Wajib diisi" })}
-                  />
-                  {errors.namaInisiator && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {errors.namaInisiator.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
                     Jenis Inovasi
                   </label>
                   <div className="mt-2 grid sm:grid-cols-2 gap-3">
@@ -428,54 +495,100 @@ const FormDaftar = () => {
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Bentuk Inovasi Daerah
+                      Kategori Inovasi
                     </label>
 
                     <select
                       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                      {...register("bentukInovasi", { required: "Wajib dipilih" })}
+                      disabled={loadingKategori}
+                      {...register("kategoriInovasi", {
+                        required: "Wajib dipilih",
+                      })}
                     >
-                      <option value="">Silahkan Pilih</option>
-                      {bentukOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
+                      <option value="">
+                        {loadingKategori
+                          ? "Memuat data kategori..."
+                          : "Silahkan Pilih"}
+                      </option>
+
+                      {kategoriOptions.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
                         </option>
                       ))}
                     </select>
 
-                    {errors.bentukInovasi && (
+                    {errors.kategoriInovasi && (
                       <p className="mt-1 text-xs text-red-500">
-                        {errors.bentukInovasi.message}
+                        {errors.kategoriInovasi.message}
+                      </p>
+                    )}
+
+                    {!errors.kategoriInovasi && kategoriError && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {kategoriError}
                       </p>
                     )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tematik
+                      Bentuk Inovasi Daerah
                     </label>
 
                     <select
                       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                      {...register("tematik", { required: "Wajib dipilih" })}
+                      {...register("bentukInovasiDaerah", {
+                        required: "Wajib dipilih",
+                      })}
                     >
                       <option value="">Silahkan Pilih</option>
-                      {tematikOptions.map((o) => (
+                      {bentukInovasiDaerahOptions.map((o) => (
                         <option key={o} value={o}>
                           {o}
                         </option>
                       ))}
                     </select>
 
-                    {errors.tematik && (
+                    {errors.bentukInovasiDaerah && (
                       <p className="mt-1 text-xs text-red-500">
-                        {errors.tematik.message}
+                        {errors.bentukInovasiDaerah.message}
                       </p>
                     )}
                   </div>
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Asta Cita
+                    </label>
+
+                    <select
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                      {...register("astaCita", { required: "Wajib dipilih" })}
+                    >
+                      <option value="">Silahkan Pilih</option>
+                      {astaCitaOptions.map((o, index) => (
+                        <option key={o} value={o}>
+                          {`${index + 1}. ${o}`}
+                        </option>
+                      ))}
+                    </select>
+
+                    {selectedAstaCita && (
+                      <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 whitespace-pre-line break-words leading-6">
+                        {selectedAstaCita}
+                      </div>
+                    )}
+
+                    {errors.astaCita && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.astaCita.message}
+                      </p>
+                    )}
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Urusan Utama
@@ -486,7 +599,7 @@ const FormDaftar = () => {
                       {...register("urusanUtama", { required: "Wajib dipilih" })}
                     >
                       <option value="">Pilih...</option>
-                      {urusanUtamaOptions.map((o) => (
+                      {urusanOptions.map((o) => (
                         <option key={o} value={o}>
                           {o}
                         </option>
@@ -499,24 +612,24 @@ const FormDaftar = () => {
                       </p>
                     )}
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Urusan lain yang beririsan
-                    </label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Urusan lain yang beririsan
+                  </label>
 
-                    <select
-                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
-                      {...register("urusanIrisan")}
-                    >
-                      <option value="">Select...</option>
-                      {urusanIrisanOptions.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <select
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                    {...register("urusanIrisan")}
+                  >
+                    <option value="">Pilih...</option>
+                    {urusanOptions.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="grid sm:grid-cols-3 gap-6">
@@ -744,7 +857,10 @@ const FormDaftar = () => {
                       type="file"
                       accept="application/pdf"
                       className="hidden"
-                      {...register("pptFile", { validate: validatePdf2mb })}
+                      {...register("pptFile", {
+                        required: "PPT wajib diisi",
+                        validate: validatePdf2mb,
+                      })}
                     />
                     <label
                       htmlFor="pptFile"
@@ -843,6 +959,7 @@ const FormDaftar = () => {
                       accept="application/pdf"
                       className="hidden"
                       {...register("proposalFile", {
+                        required: "Proposal wajib diisi",
                         validate: validatePdf2mb,
                       })}
                     />

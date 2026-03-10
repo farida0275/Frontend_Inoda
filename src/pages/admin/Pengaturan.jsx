@@ -5,8 +5,6 @@ import {
   Newspaper,
   Lightbulb,
   Plus,
-  Trash2,
-  Pencil,
   ClipboardList,
 } from "lucide-react";
 
@@ -17,8 +15,12 @@ import EditBerita from "./Form/editBerita";
 import TambahInovasi from "./Form/tambahInovasi";
 import EditInovasi from "./Form/editInovasi";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ;
+import UserTable from "./pengaturan/user";
+import BeritaTable from "./pengaturan/berita";
+import InovasiTable from "./pengaturan/inovasi";
+import PenugasanJuriTable from "./pengaturan/penugasanjuri";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const TABS = [
   { key: "user", label: "User", icon: User },
@@ -35,36 +37,11 @@ const SEED = {
   penugasan: [],
 };
 
-const ROLE_OPTIONS = [
-  { label: "Admin", value: "admin" },
-  { label: "Juri", value: "juri" },
-  { label: "Peserta", value: "user" },
-];
-
-const STATUS_OPTIONS = ["draft", "published", "archived"];
-
 const TableShell = ({ children }) => (
   <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
     {children}
   </div>
 );
-
-const IconBtn = ({ variant = "neutral", children, ...props }) => {
-  const base =
-    "inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold border transition";
-  const styles =
-    variant === "danger"
-      ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
-      : variant === "primary"
-      ? "border-purple-200 bg-purple-50 text-purple-800 hover:bg-purple-100"
-      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50";
-
-  return (
-    <button type="button" className={`${base} ${styles}`} {...props}>
-      {children}
-    </button>
-  );
-};
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -104,7 +81,7 @@ const mapInovasiFromApi = (item) => ({
 
 const mapPesertaFromApi = (item) => ({
   id: item.id,
-  namaPemda: item.nama_inisiator || "-",
+  namaInisiator: item.nama_inisiator || "-",
   namaInovasi: item.nama_inovasi || "-",
   tahapan: item.tahapan_inovasi || "-",
   urusan: item.urusan_utama || "-",
@@ -420,7 +397,7 @@ const Pengaturan = () => {
 
       return {
         ...item,
-        namaPemda: peserta?.namaPemda || "-",
+        namaInisiator: peserta?.namaInisiator || "-",
         namaInovasiPeserta: peserta?.namaInovasi || "-",
         kategoriInovasi: inovasi?.kategori || "-",
         namaJuri: juri?.nama || "-",
@@ -883,530 +860,56 @@ const Pengaturan = () => {
           </div>
 
           {activeTab === "user" && (
-            <div className="overflow-x-auto">
-              {loadingUser ? (
-                <div className="px-5 py-10 text-center text-slate-500">
-                  Memuat data user...
-                </div>
-              ) : userError ? (
-                <div className="px-5 py-6">
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                    {userError}
-                  </div>
-                </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 text-slate-700">
-                    <tr className="border-b border-slate-200">
-                      <th className="px-5 py-3 text-left w-14">#</th>
-                      <th className="px-5 py-3 text-left">Nama</th>
-                      <th className="px-5 py-3 text-left">Email</th>
-                      <th className="px-5 py-3 text-left">Role</th>
-                      <th className="px-5 py-3 text-left w-56">Aksi</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {filtered.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={5}
-                          className="px-5 py-10 text-center text-slate-500"
-                        >
-                          Data tidak ditemukan.
-                        </td>
-                      </tr>
-                    ) : (
-                      filtered.map((r, idx) => (
-                        <tr
-                          key={r.id}
-                          className="border-b border-slate-100 hover:bg-slate-50 transition"
-                        >
-                          <td className="px-5 py-4 text-slate-600">{idx + 1}</td>
-                          <td className="px-5 py-4 font-semibold text-slate-900">
-                            {r.nama}
-                          </td>
-                          <td className="px-5 py-4 text-slate-700">{r.email}</td>
-
-                          <td className="px-5 py-4">
-                            <select
-                              value={r.role}
-                              onChange={(e) =>
-                                handleRoleChange(r.id, e.target.value)
-                              }
-                              className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-800
-                                       focus:outline-none focus:ring-2 focus:ring-purple-200"
-                            >
-                              {ROLE_OPTIONS.map((opt) => (
-                                <option key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-2">
-                              <IconBtn
-                                variant="primary"
-                                onClick={() => handleEdit("user", r)}
-                                title="Edit"
-                              >
-                                <Pencil className="h-4 w-4" />
-                                Edit
-                              </IconBtn>
-
-                              <IconBtn
-                                variant="danger"
-                                onClick={() => handleHapus("user", r.id)}
-                                title="Hapus"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Hapus
-                              </IconBtn>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            <UserTable
+              loadingUser={loadingUser}
+              userError={userError}
+              filtered={filtered}
+              handleRoleChange={handleRoleChange}
+              handleEdit={handleEdit}
+              handleHapus={handleHapus}
+            />
           )}
 
           {activeTab === "berita" && (
-            <div className="overflow-x-auto">
-              {loadingBerita ? (
-                <div className="px-5 py-10 text-center text-slate-500">
-                  Memuat data berita...
-                </div>
-              ) : beritaError ? (
-                <div className="px-5 py-6">
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                    {beritaError}
-                  </div>
-                </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 text-slate-700">
-                    <tr className="border-b border-slate-200">
-                      <th className="px-5 py-3 text-left w-14">#</th>
-                      <th className="px-5 py-3 text-left">Judul</th>
-                      <th className="px-5 py-3 text-left">Kategori</th>
-                      <th className="px-5 py-3 text-left">Tanggal</th>
-                      <th className="px-5 py-3 text-left w-56">Aksi</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {filtered.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={5}
-                          className="px-5 py-10 text-center text-slate-500"
-                        >
-                          Data tidak ditemukan.
-                        </td>
-                      </tr>
-                    ) : (
-                      filtered.map((r, idx) => (
-                        <tr
-                          key={r.id}
-                          className="border-b border-slate-100 hover:bg-slate-50 transition"
-                        >
-                          <td className="px-5 py-4 text-slate-600">{idx + 1}</td>
-                          <td className="px-5 py-4 font-semibold text-slate-900">
-                            {r.judul}
-                          </td>
-                          <td className="px-5 py-4 text-slate-700">
-                            {r.kategori}
-                          </td>
-                          <td className="px-5 py-4 text-slate-700">
-                            {r.tanggal}
-                          </td>
-
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-2">
-                              <IconBtn
-                                variant="primary"
-                                onClick={() => handleEdit("berita", r)}
-                                title="Edit"
-                              >
-                                <Pencil className="h-4 w-4" />
-                                Edit
-                              </IconBtn>
-
-                              <IconBtn
-                                variant="danger"
-                                onClick={() => handleHapus("berita", r.id)}
-                                title="Hapus"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Hapus
-                              </IconBtn>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            <BeritaTable
+              loadingBerita={loadingBerita}
+              beritaError={beritaError}
+              filtered={filtered}
+              handleEdit={handleEdit}
+              handleHapus={handleHapus}
+            />
           )}
 
           {activeTab === "inovasi" && (
-            <div className="overflow-x-auto">
-              {loadingInovasi ? (
-                <div className="px-5 py-10 text-center text-slate-500">
-                  Memuat data inovasi...
-                </div>
-              ) : inovasiError ? (
-                <div className="px-5 py-6">
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                    {inovasiError}
-                  </div>
-                </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 text-slate-700">
-                    <tr className="border-b border-slate-200">
-                      <th className="px-5 py-3 text-left w-14">#</th>
-                      <th className="px-5 py-3 text-left">Kategori</th>
-                      <th className="px-5 py-3 text-left">Deskripsi Singkat</th>
-                      <th className="px-5 py-3 text-left w-56">Aksi</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {filtered.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          className="px-5 py-10 text-center text-slate-500"
-                        >
-                          Data tidak ditemukan.
-                        </td>
-                      </tr>
-                    ) : (
-                      filtered.map((r, idx) => (
-                        <tr
-                          key={r.id}
-                          className="border-b border-slate-100 hover:bg-slate-50 transition"
-                        >
-                          <td className="px-5 py-4 text-slate-600">{idx + 1}</td>
-                          <td className="px-5 py-4 font-semibold text-slate-900">
-                            {r.kategori}
-                          </td>
-                          <td className="px-5 py-4 text-slate-700">
-                            {r.deskripsi}
-                          </td>
-
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-2">
-                              <IconBtn
-                                variant="primary"
-                                onClick={() => handleEdit("inovasi", r)}
-                                title="Edit"
-                              >
-                                <Pencil className="h-4 w-4" />
-                                Edit
-                              </IconBtn>
-
-                              <IconBtn
-                                variant="danger"
-                                onClick={() => handleHapus("inovasi", r.id)}
-                                title="Hapus"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Hapus
-                              </IconBtn>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            <InovasiTable
+              loadingInovasi={loadingInovasi}
+              inovasiError={inovasiError}
+              filtered={filtered}
+              handleEdit={handleEdit}
+              handleHapus={handleHapus}
+            />
           )}
 
           {activeTab === "penugasan" && (
-            <>
-              <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <select
-                    value={penugasanForm.juri_id}
-                    onChange={(e) =>
-                      setPenugasanForm((prev) => ({
-                        ...prev,
-                        juri_id: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="">Pilih Juri</option>
-                    {juriOptions.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.nama} - {item.email}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={penugasanForm.inovasi_id}
-                    onChange={(e) =>
-                      setPenugasanForm((prev) => ({
-                        ...prev,
-                        inovasi_id: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="">Pilih Inovasi</option>
-                    {inovasiRows.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.kategori}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={penugasanForm.slot_penilai}
-                    onChange={(e) =>
-                      setPenugasanForm((prev) => ({
-                        ...prev,
-                        slot_penilai: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="1">Slot 1</option>
-                    <option value="2">Slot 2</option>
-                    <option value="3">Slot 3</option>
-                  </select>
-
-                  <button
-                    type="button"
-                    onClick={handleAssignByInovasi}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition bg-purple-700 text-white hover:bg-purple-800"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Tugaskan
-                  </button>
-                </div>
-
-                {(penugasanForm.inovasi_id || penugasanForm.slot_penilai) && (
-                  <div className="mt-3">
-                    {selectedInovasiMeta ? (
-                      selectedSlotOccupied ? (
-                        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                          Slot {penugasanForm.slot_penilai} untuk inovasi{" "}
-                          <span className="font-semibold">
-                            {selectedInovasiMeta.kategori}
-                          </span>{" "}
-                          sudah terisi.
-                        </div>
-                      ) : (
-                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                          Slot {penugasanForm.slot_penilai} untuk inovasi{" "}
-                          <span className="font-semibold">
-                            {selectedInovasiMeta.kategori}
-                          </span>{" "}
-                          masih tersedia.
-                        </div>
-                      )
-                    ) : null}
-                  </div>
-                )}
-              </div>
-
-              <div className="overflow-x-auto border-b border-slate-200">
-                {loadingInovasi || loadingPenugasan ? (
-                  <div className="px-5 py-10 text-center text-slate-500">
-                    Memuat data inovasi...
-                  </div>
-                ) : inovasiError ? (
-                  <div className="px-5 py-6">
-                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                      {inovasiError}
-                    </div>
-                  </div>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 text-slate-700">
-                      <tr className="border-b border-slate-200">
-                        <th className="px-5 py-3 text-left w-14">#</th>
-                        <th className="px-5 py-3 text-left">Kategori Inovasi</th>
-                        <th className="px-5 py-3 text-left">Deskripsi</th>
-                        <th className="px-5 py-3 text-left">Status Slot 1</th>
-                        <th className="px-5 py-3 text-left">Status Slot 2</th>
-                        <th className="px-5 py-3 text-left">Status Slot 3</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {filteredInovasiForAssign.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={6}
-                            className="px-5 py-10 text-center text-slate-500"
-                          >
-                            Data tidak ditemukan.
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredInovasiForAssign.map((r, idx) => (
-                          <tr
-                            key={r.id}
-                            className={`border-b border-slate-100 hover:bg-slate-50 transition ${
-                              Number(r.id) === Number(penugasanForm.inovasi_id)
-                                ? "bg-purple-50/50"
-                                : ""
-                            }`}
-                          >
-                            <td className="px-5 py-4 text-slate-600">{idx + 1}</td>
-                            <td className="px-5 py-4 font-semibold text-slate-900">
-                              {r.kategori}
-                            </td>
-                            <td className="px-5 py-4 text-slate-700">
-                              {r.deskripsi}
-                            </td>
-                            <td className="px-5 py-4">
-                              {r.assignedSlot1 ? (
-                                <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 border border-red-200">
-                                  Terisi
-                                </span>
-                              ) : (
-                                <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                                  Tersedia
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-5 py-4">
-                              {r.assignedSlot2 ? (
-                                <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 border border-red-200">
-                                  Terisi
-                                </span>
-                              ) : (
-                                <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                                  Tersedia
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-5 py-4">
-                              {r.assignedSlot3 ? (
-                                <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 border border-red-200">
-                                  Terisi
-                                </span>
-                              ) : (
-                                <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                                  Tersedia
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-
-              <div className="overflow-x-auto">
-                {loadingPenugasan || loadingPeserta || loadingUser || loadingInovasi ? (
-                  <div className="px-5 py-10 text-center text-slate-500">
-                    Memuat data penugasan...
-                  </div>
-                ) : penugasanError ? (
-                  <div className="px-5 py-6">
-                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                      {penugasanError}
-                    </div>
-                  </div>
-                ) : pesertaError ? (
-                  <div className="px-5 py-6">
-                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                      {pesertaError}
-                    </div>
-                  </div>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 text-slate-700">
-                      <tr className="border-b border-slate-200">
-                        <th className="px-5 py-3 text-left w-14">#</th>
-                        <th className="px-5 py-3 text-left">Peserta</th>
-                        <th className="px-5 py-3 text-left">Nama Inovasi Peserta</th>
-                        <th className="px-5 py-3 text-left">Kategori Inovasi</th>
-                        <th className="px-5 py-3 text-left">Juri</th>
-                        <th className="px-5 py-3 text-left">Slot</th>
-                        <th className="px-5 py-3 text-left">Tanggal</th>
-                        <th className="px-5 py-3 text-left w-40">Aksi</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {filtered.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={8}
-                            className="px-5 py-10 text-center text-slate-500"
-                          >
-                            Data tidak ditemukan.
-                          </td>
-                        </tr>
-                      ) : (
-                        filtered.map((r, idx) => (
-                          <tr
-                            key={r.id}
-                            className="border-b border-slate-100 hover:bg-slate-50 transition"
-                          >
-                            <td className="px-5 py-4 text-slate-600">
-                              {idx + 1}
-                            </td>
-                            <td className="px-5 py-4 font-semibold text-slate-900">
-                              {r.namaPemda}
-                            </td>
-                            <td className="px-5 py-4 text-slate-700">
-                              {r.namaInovasiPeserta}
-                            </td>
-                            <td className="px-5 py-4 text-slate-700">
-                              {r.kategoriInovasi}
-                            </td>
-                            <td className="px-5 py-4 text-slate-700">
-                              <div className="font-semibold">{r.namaJuri}</div>
-                              <div className="text-xs text-slate-500">
-                                {r.emailJuri}
-                              </div>
-                            </td>
-                            <td className="px-5 py-4 text-slate-700">
-                              Slot {r.slot_penilai}
-                            </td>
-                            <td className="px-5 py-4 text-slate-700">
-                              {r.tanggal}
-                            </td>
-                            <td className="px-5 py-4">
-                              <div className="flex items-center gap-2">
-                                <IconBtn
-                                  variant="danger"
-                                  onClick={() => handleHapus("penugasan", r.id)}
-                                  title="Hapus"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  Hapus
-                                </IconBtn>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </>
+            <PenugasanJuriTable
+              penugasanForm={penugasanForm}
+              setPenugasanForm={setPenugasanForm}
+              juriOptions={juriOptions}
+              inovasiRows={inovasiRows}
+              selectedInovasiMeta={selectedInovasiMeta}
+              selectedSlotOccupied={selectedSlotOccupied}
+              handleAssignByInovasi={handleAssignByInovasi}
+              filteredInovasiForAssign={filteredInovasiForAssign}
+              filtered={filtered}
+              loadingInovasi={loadingInovasi}
+              loadingPenugasan={loadingPenugasan}
+              loadingPeserta={loadingPeserta}
+              loadingUser={loadingUser}
+              inovasiError={inovasiError}
+              pesertaError={pesertaError}
+              penugasanError={penugasanError}
+              handleHapus={handleHapus}
+            />
           )}
         </TableShell>
       </div>

@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Eye, Star, X } from "lucide-react";
 import DetailSubmissionModal from "../../components/LihatDetail.jsx";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const NilaiModal = ({
   open,
@@ -86,7 +85,7 @@ const NilaiModal = ({
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-bold text-slate-500">Nama Peserta</p>
               <p className="text-sm font-semibold text-slate-900">
-                {row?.namaPemda || "-"}
+                {row?.namaPeserta || "-"}
               </p>
 
               <p className="mt-3 text-xs font-bold text-slate-500">
@@ -176,33 +175,38 @@ const mapPenugasanItem = (item) => ({
   inovasi_id: Number(item.inovasi_id),
   juri_id: Number(item.juri_id),
   slotPenilai: Number(item.slot_penilai),
-  namaPemda: item.nama_pemda || "-",
+
+  // untuk tabel
+  namaPeserta: item.nama_inisiator || "-",
   namaInovasi: item.nama_inovasi || "-",
   kategoriInovasi: item.nama_kategori_inovasi || "-",
   urusan: item.urusan_utama || "-",
   tahapan: item.tahapan_inovasi || "-",
 
-  namaInisiator: item.nama_inisiator || "-",
-  tahap: item.tahapan_inovasi || "-",
-  inisiatorKelompok: item.inisiator_inovasi || "-",
-  jenisInovasi: item.jenis_inovasi || "-",
-  bentukInovasi: item.bentuk_inovasi || "-",
+  // untuk LihatDetail.jsx yang sama seperti Submisi
+  nama_inovasi: item.nama_inovasi || "-",
+  tahapan_inovasi: item.tahapan_inovasi || "-",
+  inisiator_inovasi: item.inisiator_inovasi || "-",
+  nama_inisiator: item.nama_inisiator || "-",
+  jenis_inovasi: item.jenis_inovasi || "-",
+  bentuk_inovasi: item.bentuk_inovasi || "-",
   tematik: item.tematik || "-",
-  urusanUtama: item.urusan_utama || "-",
-  urusanIrisan: item.urusan_beririsan || "-",
-  waktuInisiatif: item.waktu_pengembangan || "",
-  waktuUjiCoba: item.waktu_uji_coba || "",
-  waktuPenerapan: item.waktu_penerapan || "",
-  waktuPengembangan: item.waktu_pengembangan || "",
-  rancangBangun: item.rancangan_bangun || "",
-  tujuan: item.tujuan_inovasi || "",
-  manfaat: item.manfaat_diperoleh || "",
-  hasil: item.hasil_inovasi || "",
+  urusan_utama: item.urusan_utama || "-",
+  urusan_beririsan: item.urusan_beririsan || "-",
+  waktu_pengembangan: item.waktu_pengembangan || "",
+  waktu_uji_coba: item.waktu_uji_coba || "",
+  waktu_penerapan: item.waktu_penerapan || "",
+  rancangan_bangun: item.rancangan_bangun || "",
+  tujuan_inovasi: item.tujuan_inovasi || "",
+  manfaat_diperoleh: item.manfaat_diperoleh || "",
+  hasil_inovasi: item.hasil_inovasi || "",
   anggaran_pdf: item.anggaran_pdf || "",
   profil_bisnis_pdf: item.profil_bisnis_pdf || "",
   dokumen_haki_pdf: item.dokumen_haki_pdf || "",
   penghargaan_pdf: item.penghargaan_pdf || "",
   proposal_pdf: item.proposal_pdf || "",
+  kategori: item.kategori || "",
+  kategori_nama: item.nama_kategori_inovasi || "-",
 });
 
 const mapPenilaianItem = (item) => ({
@@ -306,7 +310,6 @@ const PenilaianJuri = () => {
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const rows = useMemo(() => {
@@ -447,40 +450,31 @@ const PenilaianJuri = () => {
                       className="border-b border-slate-100 hover:bg-slate-50 transition"
                     >
                       <td className="px-5 py-4 text-slate-600">{idx + 1}</td>
-
                       <td className="px-5 py-4 font-semibold text-slate-900">
-                        {row.namaPemda}
+                        {row.namaPeserta}
                       </td>
-
                       <td className="px-5 py-4 text-slate-700">
                         {row.namaInovasi}
                       </td>
-
                       <td className="px-5 py-4 text-slate-700">
                         {row.kategoriInovasi}
                       </td>
-
                       <td className="px-5 py-4 text-slate-700">{row.urusan}</td>
-
                       <td className="px-5 py-4 text-slate-700">
                         {row.tahapan}
                       </td>
-
                       <td className="px-5 py-4 text-slate-700">
                         Slot {row.slotPenilai}
                       </td>
-
                       <td className="px-5 py-4 font-bold text-slate-900">
                         {row.skor ?? "-"}
                       </td>
-
                       <td className="px-5 py-4">
                         <div className="flex gap-2">
                           <button
                             type="button"
                             onClick={() => handleDetail(row)}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold
-                                       border border-slate-200 bg-white hover:bg-slate-50 transition"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 transition"
                           >
                             <Eye className="h-4 w-4 text-slate-500" />
                             Lihat Detail
@@ -489,8 +483,7 @@ const PenilaianJuri = () => {
                           <button
                             type="button"
                             onClick={() => handleNilai(row)}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold
-                                       bg-purple-700 text-white hover:bg-purple-800 transition"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-purple-700 text-white hover:bg-purple-800 transition"
                           >
                             <Star className="h-4 w-4" />
                             {row.skor !== null && row.skor !== undefined

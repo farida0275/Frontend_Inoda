@@ -3,8 +3,9 @@ import { X, Eye, Download } from "lucide-react";
 
 const formatDate = (value) => {
   if (!value) return "-";
+
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return value;
+  if (Number.isNaN(d.getTime())) return value || "-";
 
   return d.toLocaleDateString("id-ID", {
     day: "2-digit",
@@ -13,20 +14,64 @@ const formatDate = (value) => {
   });
 };
 
+const normalizeToArray = (value) => {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value.filter((item) => String(item).trim() !== "");
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [value];
+};
+
 const Field = ({ label, value }) => (
   <div className="space-y-1">
     <p className="text-xs font-semibold text-slate-500">{label}</p>
     <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
-      {value || "-"}
+      {value && String(value).trim() !== "" ? value : "-"}
     </div>
   </div>
 );
+
+const ListField = ({ label, value }) => {
+  const items = normalizeToArray(value);
+
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-semibold text-slate-500">{label}</p>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+        {items.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {items.map((item, index) => (
+              <span
+                key={`${item}-${index}`}
+                className="inline-flex rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-medium text-purple-700"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">-</p>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const TextBox = ({ label, value }) => (
   <div className="space-y-1">
     <p className="text-xs font-semibold text-slate-500">{label}</p>
     <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-      {value ? (
+      {value && String(value).trim() !== "" ? (
         <p className="whitespace-pre-line text-sm leading-6 text-slate-800">
           {value}
         </p>
@@ -72,10 +117,44 @@ const handleDownload = async (url, fallbackName = "dokumen.pdf") => {
   }
 };
 
+const handleView = async (url) => {
+  try {
+    if (!url) return;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Gagal membuka file.");
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+
+    if (!contentType.includes("pdf")) {
+      const text = await response.text();
+      console.error("File view bukan PDF:", {
+        url,
+        status: response.status,
+        contentType,
+        bodyPreview: text.slice(0, 300),
+      });
+      throw new Error("File bukan PDF atau URL tidak valid.");
+    }
+
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    window.open(blobUrl, "_blank", "noopener,noreferrer");
+
+    setTimeout(() => {
+      window.URL.revokeObjectURL(blobUrl);
+    }, 60000);
+  } catch (error) {
+    console.error("View file error:", error);
+    alert(error.message || "Gagal membuka file.");
+  }
+};
+
 const FileChip = ({ label, file }) => {
-  const isString = typeof file === "string";
-  const name = isString ? getFileNameFromUrl(file) : file?.name;
-  const url = isString ? file : file?.url;
+  const name = file ? getFileNameFromUrl(file) : "";
   const fallbackName = name || "dokumen.pdf";
 
   return (
@@ -85,11 +164,11 @@ const FileChip = ({ label, file }) => {
       <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
         <span className="truncate text-sm text-slate-800">{name || "-"}</span>
 
-        {url ? (
+        {file ? (
           <div className="shrink-0 flex items-center gap-2">
             <button
               type="button"
-              onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+              onClick={() => handleView(file)}
               className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
             >
               <Eye className="h-4 w-4" />
@@ -98,7 +177,7 @@ const FileChip = ({ label, file }) => {
 
             <button
               type="button"
-              onClick={() => handleDownload(url, fallbackName)}
+              onClick={() => handleDownload(file, fallbackName)}
               className="inline-flex items-center gap-1 rounded-lg bg-purple-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-800"
             >
               <Download className="h-4 w-4" />
@@ -143,7 +222,7 @@ const LihatDetail = ({ open, onClose, data }) => {
                 Detail Submission
               </p>
               <p className="text-xs text-slate-500">
-                {d.nama_inovasi || d.namaInovasi || "Data inovasi peserta"}
+                {d.nama_inovasi || "Data inovasi peserta"}
               </p>
             </div>
 
@@ -157,69 +236,51 @@ const LihatDetail = ({ open, onClose, data }) => {
             </button>
           </div>
 
-          <div className="max-h-[75vh] overflow-auto px-6 py-6 space-y-8">
+          <div className="max-h-[75vh] overflow-auto space-y-8 px-6 py-6">
             <section className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-extrabold text-slate-900">
-                  Identitas
+                  Identitas & Data Inovasi
                 </h3>
-                <span className="text-xs font-semibold text-slate-500">
-                  Peserta: {d.nama_pemda || d.namaPemda || d.namaPeserta || "-"}
-                </span>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label="Nama Inisiator" value={d.nama_inisiator} />
+                <Field label="Nama Inovasi" value={d.nama_inovasi} />
+                <Field label="Tahapan Inovasi" value={d.tahapan_inovasi} />
                 <Field
-                  label="Nama Pemda"
-                  value={d.nama_pemda || d.namaPemda || d.namaPeserta}
+                  label="Inisiator Inovasi Daerah"
+                  value={d.inisiator_inovasi}
+                />
+                <Field label="Jenis Inovasi" value={d.jenis_inovasi} />
+                <Field
+                  label="Kategori Inovasi"
+                  value={d.kategori_nama ?? d.kategori}
                 />
                 <Field
-                  label="Nama Inovasi"
-                  value={d.nama_inovasi || d.namaInovasi}
+                  label="Bentuk Inovasi Daerah"
+                  value={d.bentuk_inovasi}
                 />
+                <Field label="Asta Cita" value={d.tematik} />
+                <Field label="Urusan Utama" value={d.urusan_utama} />
                 <Field
-                  label="Tahapan Inovasi"
-                  value={d.tahapan_inovasi || d.tahap || d.tahapan}
-                />
-                <Field
-                  label="Inisiator (Kelompok)"
-                  value={d.inisiator_inovasi || d.inisiatorKelompok}
-                />
-                <Field
-                  label="Nama Inisiator"
-                  value={d.nama_inisiator || d.namaInisiator}
-                />
-                <Field
-                  label="Jenis Inovasi"
-                  value={d.jenis_inovasi || d.jenisInovasi}
-                />
-                <Field
-                  label="Bentuk Inovasi"
-                  value={d.bentuk_inovasi || d.bentukInovasi}
-                />
-                <Field label="Tematik" value={d.tematik} />
-                <Field
-                  label="Urusan Utama"
-                  value={d.urusan_utama || d.urusanUtama || d.urusan}
-                />
-                <Field
-                  label="Urusan Irisan"
-                  value={d.urusan_beririsan || d.urusanIrisan}
+                  label="Urusan Lain yang Beririsan"
+                  value={d.urusan_beririsan}
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <Field
+                  label="Waktu Inisiatif"
+                  value={formatDate(d.waktu_pengembangan)}
+                />
+                <Field
                   label="Waktu Uji Coba"
-                  value={formatDate(d.waktu_uji_coba || d.waktuUjiCoba)}
+                  value={formatDate(d.waktu_uji_coba)}
                 />
                 <Field
                   label="Waktu Penerapan"
-                  value={formatDate(d.waktu_penerapan || d.waktuPenerapan)}
-                />
-                <Field
-                  label="Waktu Pengembangan"
-                  value={formatDate(d.waktu_pengembangan || d.waktuPengembangan || d.waktuInisiatif)}
+                  value={formatDate(d.waktu_penerapan)}
                 />
               </div>
             </section>
@@ -230,22 +291,16 @@ const LihatDetail = ({ open, onClose, data }) => {
               </h3>
 
               <div className="space-y-4">
+                <TextBox label="Rancang Bangun" value={d.rancangan_bangun} />
                 <TextBox
-                  label="Rancang Bangun"
-                  value={d.rancangan_bangun || d.rancangBangun}
+                  label="Tujuan Inovasi Daerah"
+                  value={d.tujuan_inovasi}
                 />
                 <TextBox
-                  label="Tujuan"
-                  value={d.tujuan_inovasi || d.tujuan}
+                  label="Manfaat yang Diperoleh"
+                  value={d.manfaat_diperoleh}
                 />
-                <TextBox
-                  label="Manfaat"
-                  value={d.manfaat_diperoleh || d.manfaat}
-                />
-                <TextBox
-                  label="Hasil"
-                  value={d.hasil_inovasi || d.hasil}
-                />
+                <TextBox label="Hasil Inovasi" value={d.hasil_inovasi} />
               </div>
             </section>
 
@@ -256,24 +311,24 @@ const LihatDetail = ({ open, onClose, data }) => {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FileChip
-                  label="Anggaran (PDF)"
-                  file={d.anggaran_pdf || d.anggaranFile}
+                  label="Anggaran (jika diperlukan) — PDF"
+                  file={d.anggaran_pdf}
                 />
                 <FileChip
-                  label="PPT (PDF)"
-                  file={d.profil_bisnis_pdf || d.pptFile || d.profilBisnisFile}
+                  label="PPT — PDF"
+                  file={d.profil_bisnis_pdf}
                 />
                 <FileChip
-                  label="Dokumen HAKI (PDF)"
-                  file={d.dokumen_haki_pdf || d.hakiFile}
+                  label="Dokumen HAKI — PDF"
+                  file={d.dokumen_haki_pdf}
                 />
                 <FileChip
-                  label="Penghargaan (PDF)"
-                  file={d.penghargaan_pdf || d.penghargaanFile}
+                  label="Penghargaan — PDF"
+                  file={d.penghargaan_pdf}
                 />
                 <FileChip
-                  label="Proposal (PDF)"
-                  file={d.proposal_pdf || d.proposalFile}
+                  label="Proposal — PDF"
+                  file={d.proposal_pdf}
                 />
               </div>
             </section>
