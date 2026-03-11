@@ -38,7 +38,7 @@ const SEED = {
 };
 
 const TableShell = ({ children }) => (
-  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
     {children}
   </div>
 );
@@ -67,10 +67,13 @@ const mapBeritaFromApi = (item) => ({
   judul: item.judul || "-",
   kategori: item.status || "-",
   tanggal: formatDate(item.created_at),
+  created_at: item.created_at || "",
   konten: item.konten || "",
   author: item.author || "",
   status: item.status || "draft",
   image_url: item.image_url || "",
+  source_name: item.source_name || "",
+  source_url: item.source_url || "",
 });
 
 const mapInovasiFromApi = (item) => ({
@@ -486,7 +489,11 @@ const Pengaturan = () => {
     if (slot === 1) return row.assignedSlot1;
     if (slot === 2) return row.assignedSlot2;
     return row.assignedSlot3;
-  }, [inovasiPenugasanRows, penugasanForm.inovasi_id, penugasanForm.slot_penilai]);
+  }, [
+    inovasiPenugasanRows,
+    penugasanForm.inovasi_id,
+    penugasanForm.slot_penilai,
+  ]);
 
   const handleTambah = () => {
     if (activeTab === "user") {
@@ -797,8 +804,8 @@ const Pengaturan = () => {
         </div>
 
         <div className="relative mb-4">
-          <div className="absolute left-0 right-0 bottom-0 h-px bg-slate-200" />
-          <div className="flex items-end gap-2 flex-wrap">
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-slate-200" />
+          <div className="flex flex-wrap items-end gap-2">
             {TABS.map((t) => {
               const active = activeTab === t.key;
               const Icon = t.icon;
@@ -808,10 +815,10 @@ const Pengaturan = () => {
                   type="button"
                   onClick={() => setActiveTab(t.key)}
                   className={[
-                    "relative px-4 py-2 text-sm font-semibold rounded-t-md transition flex items-center gap-2",
+                    "relative flex items-center gap-2 rounded-t-md px-4 py-2 text-sm font-semibold transition",
                     active
-                      ? "bg-white text-slate-900 border border-slate-200 border-b-0"
-                      : "bg-slate-50 text-slate-600 border border-transparent hover:text-slate-900 hover:bg-slate-100",
+                      ? "border border-slate-200 border-b-0 bg-white text-slate-900"
+                      : "border border-transparent bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
                   ].join(" ")}
                 >
                   <Icon className="h-4 w-4" />
@@ -827,20 +834,19 @@ const Pengaturan = () => {
         </div>
 
         <TableShell>
-          <div className="px-5 py-4 flex items-center justify-between gap-3 border-b border-slate-200">
-            <div className="flex items-center gap-3 w-full">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+            <div className="flex w-full items-center gap-3">
               <div className="relative w-full max-w-sm">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Pencarian..."
-                  className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 py-2 text-sm
-                             focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
-              <div className="text-xs text-slate-500 hidden sm:block">
+              <div className="hidden text-xs text-slate-500 sm:block">
                 Menu:{" "}
                 <span className="font-semibold text-slate-700">{tabLabel}</span>{" "}
                 • Total: <span className="font-semibold">{filtered.length}</span>
@@ -851,7 +857,7 @@ const Pengaturan = () => {
               <button
                 type="button"
                 onClick={handleTambah}
-                className="shrink-0 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition bg-purple-700 text-white hover:bg-purple-800"
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-purple-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-purple-800"
               >
                 <Plus className="h-4 w-4" />
                 {tambahLabel}
@@ -933,7 +939,10 @@ const Pengaturan = () => {
       <TambahBerita
         isOpen={openTambahBerita}
         onClose={() => setOpenTambahBerita(false)}
-        onSuccess={() => fetchBerita()}
+        onSuccess={async () => {
+          await fetchBerita();
+          setOpenTambahBerita(false);
+        }}
       />
 
       <EditBerita
@@ -946,16 +955,22 @@ const Pengaturan = () => {
           selectedBerita
             ? {
                 id: selectedBerita.id,
-                judul: selectedBerita.judul,
-                tanggal: "",
+                judul: selectedBerita.judul || "",
                 konten: selectedBerita.konten || "",
-                author: selectedBerita.author || "Admin",
+                author: selectedBerita.author || "",
                 status: selectedBerita.status || "draft",
-                thumbnail: selectedBerita.image_url || "",
+                image_url: selectedBerita.image_url || "",
+                source_name: selectedBerita.source_name || "",
+                source_url: selectedBerita.source_url || "",
+                created_at: selectedBerita.created_at || "",
               }
             : null
         }
-        onSuccess={() => fetchBerita()}
+        onSuccess={async () => {
+          await fetchBerita();
+          setOpenEditBerita(false);
+          setSelectedBerita(null);
+        }}
       />
 
       <TambahInovasi

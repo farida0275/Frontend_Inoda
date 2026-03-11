@@ -87,9 +87,9 @@ const PenugasanJuriTable = ({
             }
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
-            <option value="1">Slot 1</option>
-            <option value="2">Slot 2</option>
-            <option value="3">Slot 3</option>
+            <option value="1">Juri 1</option>
+            <option value="2">Juri 2</option>
+            <option value="3">Juri 3</option>
           </select>
 
           <button
@@ -145,9 +145,9 @@ const PenugasanJuriTable = ({
                 <th className="px-5 py-3 text-left w-14">#</th>
                 <th className="px-5 py-3 text-left">Kategori Inovasi</th>
                 <th className="px-5 py-3 text-left">Deskripsi</th>
-                <th className="px-5 py-3 text-left">Status Slot 1</th>
-                <th className="px-5 py-3 text-left">Status Slot 2</th>
-                <th className="px-5 py-3 text-left">Status Slot 3</th>
+                <th className="px-5 py-3 text-left">Status Juri 1</th>
+                <th className="px-5 py-3 text-left">Status Juri 2</th>
+                <th className="px-5 py-3 text-left">Status Juri 3</th>
               </tr>
             </thead>
 
@@ -241,7 +241,7 @@ const PenugasanJuriTable = ({
                 <th className="px-5 py-3 text-left w-14">#</th>
                 <th className="px-5 py-3 text-left">Nama Juri</th>
                 <th className="px-5 py-3 text-left">Kategori Inovasi</th>
-                <th className="px-5 py-3 text-left">Slot</th>
+                <th className="px-5 py-3 text-left">Juri</th>
                 <th className="px-5 py-3 text-left w-40">Aksi</th>
               </tr>
             </thead>
@@ -271,7 +271,7 @@ const PenugasanJuriTable = ({
                       {r.kategoriInovasi}
                     </td>
                     <td className="px-5 py-4 text-slate-700">
-                      Slot {r.slot_penilai}
+                      Juri {r.slot_penilai}
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">

@@ -5,6 +5,8 @@ import {
   Mail01Icon,
   LockPasswordIcon,
   ArrowLeft01Icon,
+  ViewIcon,
+  ViewOffSlashIcon,
 } from "hugeicons-react";
 import { validateEmail } from "../utils/validator";
 
@@ -14,6 +16,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -73,127 +76,147 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link
-          to="/"
-          className="flex items-center gap-2 text-purple-900 hover:text-purple-700 mb-4 text-sm font-medium"
-        >
-          <ArrowLeft01Icon className="h-5 w-5" />
-          Kembali ke Beranda
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-fuchsia-50 px-4 py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center">
+        <div className="w-full">
+          <Link
+            to="/"
+            className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-purple-900 transition hover:text-purple-700"
+          >
+            <ArrowLeft01Icon className="h-5 w-5" />
+            Kembali ke Beranda
+          </Link>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 shadow-lg rounded-xl border border-gray-100">
-          <h2 className="text-center text-3xl font-extrabold text-gray-900">
-            Masuk ke Akun Anda
-          </h2>
-
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Atau{" "}
-            <Link
-              to="/register"
-              className="font-medium text-purple-900 hover:text-purple-700"
-            >
-              daftar akun baru
-            </Link>
-          </p>
-
-          {serverError && (
-            <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
-              {serverError}
+          <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white/95 shadow-xl backdrop-blur">
+            <div className="border-b border-purple-50 bg-gradient-to-r from-purple-900 to-purple-700 px-6 py-6 text-white">
+              <h2 className="text-2xl font-bold">Masuk ke Akun Anda</h2>
+              <p className="mt-1 text-sm text-purple-100">
+                Silakan login untuk melanjutkan ke dashboard
+              </p>
             </div>
-          )}
 
-          <form className="space-y-6 mt-8" onSubmit={handleSubmit(onSubmit)}>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Alamat Email
-              </label>
+            <div className="px-6 py-7">
+              <p className="mb-6 text-center text-sm text-gray-600">
+                Belum punya akun?{" "}
+                <Link
+                  to="/register"
+                  className="font-semibold text-purple-900 hover:text-purple-700"
+                >
+                  Daftar akun baru
+                </Link>
+              </p>
 
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail01Icon className="h-5 w-5 text-gray-400" />
+              {serverError && (
+                <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                  {serverError}
+                </div>
+              )}
+
+              <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Alamat Email
+                  </label>
+
+                  <div
+                    className={`relative rounded-xl border bg-white transition focus-within:ring-2 focus-within:ring-purple-500 ${
+                      errors.email ? "border-red-300" : "border-gray-300"
+                    }`}
+                  >
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <Mail01Icon className="h-5 w-5 text-gray-400" />
+                    </div>
+
+                    <input
+                      type="email"
+                      placeholder="nama@instansi.com"
+                      className="block w-full rounded-xl bg-transparent py-3 pl-10 pr-4 text-sm outline-none"
+                      {...register("email", {
+                        validate: (value) => {
+                          const emailErrors = validateEmail(value);
+                          return emailErrors.length === 0 || emailErrors[0];
+                        },
+                      })}
+                    />
+                  </div>
+
+                  {errors.email && (
+                    <span className="mt-1 block text-xs text-red-500">
+                      {errors.email.message}
+                    </span>
+                  )}
                 </div>
 
-                <input
-                  type="email"
-                  placeholder="nama@instansi.com"
-                  className={`block w-full pl-10 sm:text-sm border rounded-md py-2 focus:ring-purple-500 focus:border-purple-500 ${
-                    errors.email ? "border-red-300" : "border-gray-300"
-                  }`}
-                  {...register("email", {
-                    validate: (value) => {
-                      const emailErrors = validateEmail(value);
-                      return emailErrors.length === 0 || emailErrors[0];
-                    },
-                  })}
-                />
-              </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Kata Sandi
+                  </label>
 
-              {errors.email && (
-                <span className="text-xs text-red-500 mt-1 block">
-                  {errors.email.message}
-                </span>
-              )}
-            </div>
+                  <div
+                    className={`relative rounded-xl border bg-white transition focus-within:ring-2 focus-within:ring-purple-500 ${
+                      errors.password ? "border-red-300" : "border-gray-300"
+                    }`}
+                  >
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <LockPasswordIcon className="h-5 w-5 text-gray-400" />
+                    </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Kata Sandi
-              </label>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Masukkan kata sandi"
+                      className="block w-full rounded-xl bg-transparent py-3 pl-10 pr-12 text-sm outline-none"
+                      {...register("password", {
+                        required: "Password harus diisi",
+                      })}
+                    />
 
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <LockPasswordIcon className="h-5 w-5 text-gray-400" />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 transition hover:text-purple-700"
+                    >
+                      {showPassword ? (
+                        <ViewOffSlashIcon className="h-5 w-5" />
+                      ) : (
+                        <ViewIcon className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+
+                  {errors.password && (
+                    <span className="mt-1 block text-xs text-red-500">
+                      {errors.password.message}
+                    </span>
+                  )}
                 </div>
 
-                <input
-                  type="password"
-                  className={`block w-full pl-10 sm:text-sm border rounded-md py-2 focus:ring-purple-500 focus:border-purple-500 ${
-                    errors.password ? "border-red-300" : "border-gray-300"
-                  }`}
-                  {...register("password", {
-                    required: "Password harus diisi",
-                  })}
-                />
-              </div>
+                <div className="flex items-center justify-between gap-4">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300 text-purple-600"
+                    />
+                    Ingat saya
+                  </label>
 
-              {errors.password && (
-                <span className="text-xs text-red-500 mt-1 block">
-                  {errors.password.message}
-                </span>
-              )}
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-purple-900 transition hover:text-purple-700"
+                  >
+                    Lupa kata sandi?
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-xl bg-purple-900 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-purple-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? "Sedang masuk..." : "Masuk"}
+                </button>
+              </form>
             </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 text-purple-600 border-gray-300 rounded"
-                />
-                <label className="ml-2 text-sm text-gray-900">
-                  Ingat saya
-                </label>
-              </div>
-
-              <a
-                href="#"
-                className="text-sm font-medium text-purple-900 hover:text-purple-700"
-              >
-                Lupa kata sandi?
-              </a>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-xl text-white font-semibold bg-purple-900 hover:opacity-90 transition shadow-lg disabled:opacity-60"
-            >
-              {loading ? "Sedang masuk..." : "Masuk"}
-            </button>
-          </form>
+          </div>
         </div>
       </div>
     </div>

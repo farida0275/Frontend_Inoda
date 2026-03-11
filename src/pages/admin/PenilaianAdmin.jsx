@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Eye, Star, X } from "lucide-react";
+import { Eye, RotateCcw, Star } from "lucide-react";
 import DetailSubmissionModal from "../../components/LihatDetail.jsx";
+import NilaiModal from "../Juri/NilaiModal.jsx";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const SLOT_TABS = [
-  { key: 1, label: "Slot 1" },
-  { key: 2, label: "Slot 2" },
-  { key: 3, label: "Slot 3" },
+  { key: 1, label: "Juri 1" },
+  { key: 2, label: "Juri 2" },
+  { key: 3, label: "Juri 3" },
 ];
 
 const TabButton = ({ active, children, onClick }) => (
@@ -127,167 +128,6 @@ const safeFetchJson = async ({
   };
 };
 
-const NilaiModal = ({
-  open,
-  onClose,
-  row,
-  initialScore = "",
-  initialCatatan = "",
-  onSave,
-}) => {
-  const [score, setScore] = useState(initialScore);
-  const [catatan, setCatatan] = useState(initialCatatan);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    setScore(initialScore ?? "");
-    setCatatan(initialCatatan ?? "");
-  }, [open, initialScore, initialCatatan, row?.id]);
-
-  if (!open) return null;
-
-  const submit = async (e) => {
-    e.preventDefault();
-    const n = Number(score);
-
-    if (Number.isNaN(n)) {
-      alert("Skor harus berupa angka.");
-      return;
-    }
-
-    const fixed = Math.max(0, Math.min(100, n));
-
-    try {
-      setSaving(true);
-      await onSave?.({
-        skor: fixed,
-        catatan,
-      });
-      onClose?.();
-    } catch (error) {
-      console.error(error);
-      alert(error.message || "Gagal menyimpan nilai.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60]">
-      <button
-        type="button"
-        aria-label="Tutup"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/40"
-      />
-
-      <div className="relative mx-auto flex min-h-full max-w-xl items-center justify-center px-4 py-10">
-        <div className="w-full rounded-2xl border border-slate-200 bg-white shadow-xl">
-          <div className="flex items-start justify-between gap-4 px-5 py-4 border-b border-slate-200">
-            <div>
-              <h3 className="text-base font-extrabold text-slate-900">
-                Input Nilai Admin
-              </h3>
-              <p className="mt-1 text-xs text-slate-500">
-                Admin dapat mengisi nilai untuk slot yang dipilih.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition"
-              aria-label="Tutup"
-            >
-              <X className="h-4 w-4 text-slate-600" />
-            </button>
-          </div>
-
-          <form onSubmit={submit} className="px-5 py-5">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-bold text-slate-500">Nama Peserta</p>
-              <p className="text-sm font-semibold text-slate-900">
-                {row?.namaPeserta || "-"}
-              </p>
-
-              <p className="mt-3 text-xs font-bold text-slate-500">
-                Nama Inovasi
-              </p>
-              <p className="text-sm text-slate-800">
-                {row?.namaInovasi || "-"}
-              </p>
-
-              <p className="mt-3 text-xs font-bold text-slate-500">Slot</p>
-              <p className="text-sm text-slate-800">
-                Slot {row?.slotPenilai || "-"}
-              </p>
-
-              <p className="mt-3 text-xs font-bold text-slate-500">
-                Juri Penugasan
-              </p>
-              <p className="text-sm text-slate-800">{row?.namaJuri || "-"}</p>
-            </div>
-
-            <div className="mt-5">
-              <label className="block text-sm font-bold text-slate-800">
-                Skor (0 - 100)
-              </label>
-
-              <div className="mt-2 flex items-center gap-3">
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={score}
-                  onChange={(e) => setScore(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-purple-200"
-                  placeholder="Masukkan skor..."
-                  autoFocus
-                />
-                <div className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-extrabold text-slate-900">
-                  /100
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <label className="block text-sm font-bold text-slate-800">
-                Catatan
-              </label>
-              <textarea
-                value={catatan}
-                onChange={(e) => setCatatan(e.target.value)}
-                rows={4}
-                placeholder="Catatan penilaian..."
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-purple-200 resize-none"
-              />
-            </div>
-
-            <div className="mt-6 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 border border-slate-200 bg-white hover:bg-slate-50 transition"
-              >
-                Batal
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white bg-purple-700 hover:bg-purple-800 transition disabled:opacity-60"
-              >
-                <Star className="h-4 w-4" />
-                {saving ? "Menyimpan..." : "Simpan Nilai"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const formatDate = (value) => {
   if (!value) return "";
   const d = new Date(value);
@@ -298,6 +138,45 @@ const formatDate = (value) => {
     year: "numeric",
   });
 };
+
+const actionBtnClass =
+  "inline-flex h-9 w-9 items-center justify-center rounded-lg border transition disabled:opacity-50 disabled:cursor-not-allowed";
+
+const mapPenilaianItem = (item) => ({
+  id: item.id,
+  peserta_id: Number(item.peserta_id),
+  inovasi_id: Number(item.inovasi_id),
+  juri_id: Number(item.juri_id),
+  catatan: item.catatan || "",
+  slot_penilai:
+    item.slot_penilai !== undefined && item.slot_penilai !== null
+      ? Number(item.slot_penilai)
+      : null,
+
+  proposal_tampilan: Number(item.proposal_tampilan ?? 0),
+  proposal_kelengkapan: Number(item.proposal_kelengkapan ?? 0),
+  proposal_keterkaitan: Number(item.proposal_keterkaitan ?? 0),
+  proposal_tujuan: Number(item.proposal_tujuan ?? 0),
+  proposal_deskripsi: Number(item.proposal_deskripsi ?? 0),
+
+  video_latar_belakang: Number(item.video_latar_belakang ?? 0),
+  video_penjaringan_ide: Number(item.video_penjaringan_ide ?? 0),
+  video_pemilihan_ide: Number(item.video_pemilihan_ide ?? 0),
+  video_manfaat: Number(item.video_manfaat ?? 0),
+  video_dampak: Number(item.video_dampak ?? 0),
+
+  substansi_kesiapterapan: Number(item.substansi_kesiapterapan ?? 0),
+  substansi_kebaharuan: Number(item.substansi_kebaharuan ?? 0),
+  substansi_komersialisasi: Number(item.substansi_komersialisasi ?? 0),
+  substansi_usp: Number(item.substansi_usp ?? 0),
+  substansi_kemanfaatan: Number(item.substansi_kemanfaatan ?? 0),
+  substansi_kedalaman: Number(item.substansi_kedalaman ?? 0),
+
+  skor_proposal: Number(item.skor_proposal ?? 0),
+  skor_video: Number(item.skor_video ?? 0),
+  skor_substansi: Number(item.skor_substansi ?? 0),
+  skor_akhir: Number(item.skor_akhir ?? 0),
+});
 
 const PenilaianAdmin = () => {
   const [activeSlot, setActiveSlot] = useState(1);
@@ -313,6 +192,7 @@ const PenilaianAdmin = () => {
   const [penugasanList, setPenugasanList] = useState([]);
 
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [warningMessage, setWarningMessage] = useState("");
 
@@ -340,7 +220,6 @@ const PenilaianAdmin = () => {
             },
             label: "INOVASI",
           }),
-
           safeFetchJson({
             url: `${API_URL}/data-peserta`,
             options: {
@@ -352,7 +231,6 @@ const PenilaianAdmin = () => {
             },
             label: "DATA PESERTA",
           }),
-
           safeFetchJson({
             url: `${API_URL}/penilaian`,
             options: {
@@ -364,7 +242,6 @@ const PenilaianAdmin = () => {
             },
             label: "PENILAIAN",
           }),
-
           safeFetchJson({
             url: `${API_URL}/penugasan-juri`,
             options: {
@@ -438,7 +315,7 @@ const PenilaianAdmin = () => {
 
       setInovasiList(inovasiData);
       setPesertaList(pesertaData);
-      setPenilaianList(penilaianData);
+      setPenilaianList(penilaianData.map(mapPenilaianItem));
       setPenugasanList(penugasanData);
 
       if (inovasiData.length > 0) {
@@ -493,7 +370,6 @@ const PenilaianAdmin = () => {
         peserta_id: item.id,
         inovasi_id: currentInv.id,
 
-        // untuk tabel
         namaPeserta: item.nama_inisiator || "-",
         namaInovasi: item.nama_inovasi || "-",
         kategoriNama: currentInv.name || "-",
@@ -503,14 +379,34 @@ const PenilaianAdmin = () => {
         namaJuri: penugasan?.nama_juri || "-",
         juri_id: penugasan?.juri_id || null,
         assigned: !!penugasan,
-        skor:
-          nilai && nilai.skor !== undefined && nilai.skor !== null
-            ? Number(nilai.skor)
-            : null,
-        catatan: nilai?.catatan || "",
-        penilaian_id: nilai?.id || null,
 
-        // untuk DetailSubmissionModal / LihatDetail.jsx
+        penilaian_id: nilai?.id || null,
+        catatan: nilai?.catatan || "",
+
+        proposal_tampilan: nilai?.proposal_tampilan ?? 0,
+        proposal_kelengkapan: nilai?.proposal_kelengkapan ?? 0,
+        proposal_keterkaitan: nilai?.proposal_keterkaitan ?? 0,
+        proposal_tujuan: nilai?.proposal_tujuan ?? 0,
+        proposal_deskripsi: nilai?.proposal_deskripsi ?? 0,
+
+        video_latar_belakang: nilai?.video_latar_belakang ?? 0,
+        video_penjaringan_ide: nilai?.video_penjaringan_ide ?? 0,
+        video_pemilihan_ide: nilai?.video_pemilihan_ide ?? 0,
+        video_manfaat: nilai?.video_manfaat ?? 0,
+        video_dampak: nilai?.video_dampak ?? 0,
+
+        substansi_kesiapterapan: nilai?.substansi_kesiapterapan ?? 0,
+        substansi_kebaharuan: nilai?.substansi_kebaharuan ?? 0,
+        substansi_komersialisasi: nilai?.substansi_komersialisasi ?? 0,
+        substansi_usp: nilai?.substansi_usp ?? 0,
+        substansi_kemanfaatan: nilai?.substansi_kemanfaatan ?? 0,
+        substansi_kedalaman: nilai?.substansi_kedalaman ?? 0,
+
+        skorProposal: nilai?.skor_proposal ?? null,
+        skorVideo: nilai?.skor_video ?? null,
+        skorSubstansi: nilai?.skor_substansi ?? null,
+        skorAkhir: nilai?.skor_akhir ?? null,
+
         kategori: item.kategori || "",
         kategori_nama: currentInv.name || "-",
         nama_inovasi: item.nama_inovasi || "-",
@@ -535,25 +431,21 @@ const PenilaianAdmin = () => {
         penghargaan_pdf: item.penghargaan_pdf || "",
         proposal_pdf: item.proposal_pdf || "",
 
-        // opsional untuk tabel lama / kompatibilitas
-        tahap: item.tahapan_inovasi || "-",
-        inisiatorKelompok: item.inisiator_inovasi || "-",
-        namaInisiator: item.nama_inisiator || "-",
-        jenisInovasi: item.jenis_inovasi || "-",
-        bentukInovasi: item.bentuk_inovasi || "-",
-        urusanUtama: item.urusan_utama || "-",
-        urusanIrisan: item.urusan_beririsan || "-",
         waktuInisiatif: formatDate(item.waktu_pengembangan),
-        waktuUjiCoba: formatDate(item.waktu_uji_coba),
-        waktuPenerapan: formatDate(item.waktu_penerapan),
-        waktuPengembangan: formatDate(item.waktu_pengembangan),
-        rancangBangun: item.rancangan_bangun || "",
-        tujuan: item.tujuan_inovasi || "",
-        manfaat: item.manfaat_diperoleh || "",
-        hasil: item.hasil_inovasi || "",
       };
     });
   }, [pesertaList, penilaianList, penugasanList, currentInv, activeSlot]);
+
+  const jumlahSudahDinilai = useMemo(() => {
+    return rows.filter((row) => row.penilaian_id !== null).length;
+  }, [rows]);
+
+  const uniqueAssignedJuriCount = useMemo(() => {
+    const ids = new Set(
+      rows.filter((row) => row.juri_id).map((row) => Number(row.juri_id))
+    );
+    return ids.size;
+  }, [rows]);
 
   const handleDetail = (row) => {
     setSelectedRow(row);
@@ -562,14 +454,14 @@ const PenilaianAdmin = () => {
 
   const handleNilai = (row) => {
     if (!row.assigned) {
-      alert("Slot ini belum memiliki juri yang ditugaskan.");
+      alert("Tempat ini belum memiliki juri yang ditugaskan.");
       return;
     }
     setRowNilai(row);
     setOpenNilai(true);
   };
 
-  const saveNilai = async ({ skor, catatan }) => {
+  const saveNilai = async (payloadForm) => {
     try {
       if (!rowNilai) return;
 
@@ -589,8 +481,29 @@ const PenilaianAdmin = () => {
             peserta_id: Number(rowNilai.peserta_id),
             inovasi_id: Number(rowNilai.inovasi_id),
             slot_penilai: Number(rowNilai.slotPenilai),
-            skor: Number(skor),
-            catatan: catatan || "",
+
+            proposal_tampilan: Number(payloadForm.proposal_tampilan),
+            proposal_kelengkapan: Number(payloadForm.proposal_kelengkapan),
+            proposal_keterkaitan: Number(payloadForm.proposal_keterkaitan),
+            proposal_tujuan: Number(payloadForm.proposal_tujuan),
+            proposal_deskripsi: Number(payloadForm.proposal_deskripsi),
+
+            video_latar_belakang: Number(payloadForm.video_latar_belakang),
+            video_penjaringan_ide: Number(payloadForm.video_penjaringan_ide),
+            video_pemilihan_ide: Number(payloadForm.video_pemilihan_ide),
+            video_manfaat: Number(payloadForm.video_manfaat),
+            video_dampak: Number(payloadForm.video_dampak),
+
+            substansi_kesiapterapan: Number(payloadForm.substansi_kesiapterapan),
+            substansi_kebaharuan: Number(payloadForm.substansi_kebaharuan),
+            substansi_komersialisasi: Number(
+              payloadForm.substansi_komersialisasi
+            ),
+            substansi_usp: Number(payloadForm.substansi_usp),
+            substansi_kemanfaatan: Number(payloadForm.substansi_kemanfaatan),
+            substansi_kedalaman: Number(payloadForm.substansi_kedalaman),
+
+            catatan: payloadForm.catatan || "",
           }),
         },
         "SAVE PENILAIAN ADMIN"
@@ -615,20 +528,110 @@ const PenilaianAdmin = () => {
     }
   };
 
+  const handleResetSemua = async () => {
+    if (jumlahSudahDinilai === 0) {
+      alert("Belum ada nilai yang bisa direset.");
+      return;
+    }
+
+    const ok = window.confirm(
+      "Reset semua penilaian? Tindakan ini akan menghapus seluruh nilai."
+    );
+    if (!ok) return;
+
+    try {
+      setActionLoading(true);
+
+      const response = await debugFetch(
+        `${API_URL}/penilaian/reset/all`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+        "RESET SEMUA PENILAIAN"
+      );
+
+      const result = await parseJsonSafe(response, "RESET SEMUA PENILAIAN");
+
+      if (!response.ok) {
+        throw new Error(
+          result?.errors?.join(", ") ||
+            result?.message ||
+            "Gagal mereset semua penilaian."
+        );
+      }
+
+      await fetchAll();
+    } catch (error) {
+      console.error("Reset semua penilaian error:", error);
+      alert(error.message || "Gagal mereset semua penilaian.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResetByJuri = async (row) => {
+    if (!row?.juri_id) {
+      alert("Baris ini belum memiliki juri yang ditugaskan.");
+      return;
+    }
+
+    const ok = window.confirm(
+      `Reset semua penilaian milik juri "${row.namaJuri}" (ID: ${row.juri_id})?`
+    );
+    if (!ok) return;
+
+    try {
+      setActionLoading(true);
+
+      const response = await debugFetch(
+        `${API_URL}/penilaian/reset/juri/${row.juri_id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+        "RESET PENILAIAN BY JURI"
+      );
+
+      const result = await parseJsonSafe(response, "RESET PENILAIAN BY JURI");
+
+      if (!response.ok) {
+        throw new Error(
+          result?.errors?.join(", ") ||
+            result?.message ||
+            "Gagal mereset penilaian berdasarkan juri."
+        );
+      }
+
+      await fetchAll();
+    } catch (error) {
+      console.error("Reset penilaian by juri error:", error);
+      alert(error.message || "Gagal mereset penilaian berdasarkan juri.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="p-6">
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="mx-auto w-full max-w-7xl">
         <div className="mb-5">
           <h1 className="text-xl font-extrabold text-slate-900">
             Penilaian Admin
           </h1>
           <p className="text-sm text-slate-500">
-            Admin dapat mengakses semua slot penilaian, tetapi tetap bukan
+            Admin dapat mengakses semua Tempat penilaian, tetapi tetap bukan
             penilai tambahan.
           </p>
         </div>
 
-        <div className="flex gap-2 items-end">
+        <div className="flex items-end gap-2">
           {SLOT_TABS.map((t) => (
             <TabButton
               key={t.key}
@@ -638,10 +641,21 @@ const PenilaianAdmin = () => {
               {t.label}
             </TabButton>
           ))}
+
           <div className="flex-1 border-b border-slate-200" />
+
+          <button
+            type="button"
+            onClick={handleResetSemua}
+            disabled={actionLoading || jumlahSudahDinilai === 0}
+            className="mb-[1px] inline-flex items-center justify-center gap-2 rounded-t-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <RotateCcw className="h-4 w-4" />
+            {actionLoading ? "Memproses..." : "Reset Semua Nilai"}
+          </button>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-b-xl rounded-tr-xl border border-slate-200 shadow-sm">
           <div className="px-5 pt-5">
             <div className="flex flex-wrap gap-2">
               {inovasiList.map((inv) => (
@@ -657,11 +671,19 @@ const PenilaianAdmin = () => {
           </div>
 
           <div className="px-5 py-4 flex items-center justify-between border-b border-slate-200">
-            <div className="text-sm font-bold text-slate-800">
-              Daftar Peserta • {currentInvLabel}
-            </div>
-            <div className="text-xs text-slate-500">
-              Aktif: <span className="font-semibold">SLOT {activeSlot}</span>
+            <div>
+              <div className="text-sm font-bold text-slate-800">
+                Daftar Peserta • {currentInvLabel}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                Aktif: <span className="font-semibold">JURI {activeSlot}</span>
+                {" • "}
+                Sudah dinilai:{" "}
+                <span className="font-semibold">{jumlahSudahDinilai}</span>
+                {" • "}
+                Total juri terlibat:{" "}
+                <span className="font-semibold">{uniqueAssignedJuriCount}</span>
+              </div>
             </div>
           </div>
 
@@ -685,16 +707,16 @@ const PenilaianAdmin = () => {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-slate-700">
                 <tr className="border-b border-slate-200">
-                  <th className="text-left font-bold px-5 py-3 w-14">#</th>
-                  <th className="text-left font-bold px-5 py-3">Nama Peserta</th>
-                  <th className="text-left font-bold px-5 py-3">Nama Inovasi</th>
-                  <th className="text-left font-bold px-5 py-3">Kategori</th>
-                  <th className="text-left font-bold px-5 py-3">Urusan</th>
-                  <th className="text-left font-bold px-5 py-3">Tahapan</th>
-                  <th className="text-left font-bold px-5 py-3">Waktu Inisiatif</th>
-                  <th className="text-left font-bold px-5 py-3">Juri Slot</th>
-                  <th className="text-left font-bold px-5 py-3 w-24">Skor</th>
-                  <th className="text-left font-bold px-5 py-3 w-56">Aksi</th>
+                  <th className="text-left font-bold px-4 py-3 w-12">#</th>
+                  <th className="text-left font-bold px-4 py-3">Peserta</th>
+                  <th className="text-left font-bold px-4 py-3">Inovasi</th>
+                  <th className="text-left font-bold px-4 py-3">Kategori</th>
+                  <th className="text-left font-bold px-4 py-3">Urusan</th>
+                  <th className="text-left font-bold px-4 py-3">Tahapan</th>
+                  <th className="text-left font-bold px-4 py-3">Inisiatif</th>
+                  <th className="text-left font-bold px-4 py-3">Juri</th>
+                  <th className="text-left font-bold px-4 py-3 w-20">Skor</th>
+                  <th className="text-center font-bold px-4 py-3 w-40">Aksi</th>
                 </tr>
               </thead>
 
@@ -703,7 +725,7 @@ const PenilaianAdmin = () => {
                   <tr>
                     <td
                       colSpan={10}
-                      className="px-5 py-10 text-center text-slate-500"
+                      className="px-4 py-10 text-center text-slate-500"
                     >
                       Memuat data...
                     </td>
@@ -712,7 +734,7 @@ const PenilaianAdmin = () => {
                   <tr>
                     <td
                       colSpan={10}
-                      className="px-5 py-10 text-center text-slate-500"
+                      className="px-4 py-10 text-center text-slate-500"
                     >
                       Belum ada data untuk {currentInvLabel}.
                     </td>
@@ -723,33 +745,38 @@ const PenilaianAdmin = () => {
                       key={`${row.id}-${row.slotPenilai}`}
                       className="border-b border-slate-100 hover:bg-slate-50 transition"
                     >
-                      <td className="px-5 py-4 text-slate-600">{idx + 1}</td>
+                      <td className="px-4 py-3 text-slate-600">{idx + 1}</td>
 
-                      <td className="px-5 py-4 font-semibold text-slate-900">
+                      <td className="px-4 py-3 font-semibold text-slate-900">
                         {row.namaPeserta}
                       </td>
 
-                      <td className="px-5 py-4 text-slate-700">
+                      <td className="px-4 py-3 text-slate-700">
                         {row.namaInovasi}
                       </td>
 
-                      <td className="px-5 py-4 text-slate-700">
+                      <td className="px-4 py-3 text-slate-700">
                         {row.kategoriNama}
                       </td>
 
-                      <td className="px-5 py-4 text-slate-700">{row.urusan}</td>
+                      <td className="px-4 py-3 text-slate-700">{row.urusan}</td>
 
-                      <td className="px-5 py-4 text-slate-700">
+                      <td className="px-4 py-3 text-slate-700">
                         {row.tahapan}
                       </td>
 
-                      <td className="px-5 py-4 text-slate-700">
+                      <td className="px-4 py-3 text-slate-700">
                         {row.waktuInisiatif || "-"}
                       </td>
 
-                      <td className="px-5 py-4 text-slate-700">
+                      <td className="px-4 py-3 text-slate-700">
                         {row.assigned ? (
-                          row.namaJuri
+                          <div className="flex flex-col">
+                            <span>{row.namaJuri}</span>
+                            <span className="text-[11px] text-slate-400">
+                              ID: {row.juri_id}
+                            </span>
+                          </div>
                         ) : (
                           <span className="text-red-500 text-xs font-semibold">
                             Belum ditugaskan
@@ -757,31 +784,58 @@ const PenilaianAdmin = () => {
                         )}
                       </td>
 
-                      <td className="px-5 py-4 font-bold text-slate-900">
-                        {row.skor ?? "-"}
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex min-w-[52px] items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold ${
+                            row.skorAkhir !== null && row.skorAkhir !== undefined
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-slate-100 text-slate-500"
+                          }`}
+                        >
+                          {row.skorAkhir ?? "-"}
+                        </span>
                       </td>
 
-                      <td className="px-5 py-4">
-                        <div className="flex gap-2">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-2">
                           <button
                             type="button"
                             onClick={() => handleDetail(row)}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 transition"
+                            className={`${actionBtnClass} border-slate-200 bg-white hover:bg-slate-50`}
+                            title="Lihat Detail"
+                            aria-label="Lihat Detail"
                           >
-                            <Eye className="h-4 w-4 text-slate-500" />
-                            Lihat Detail
+                            <Eye className="h-4 w-4 text-slate-600" />
                           </button>
 
                           <button
                             type="button"
                             onClick={() => handleNilai(row)}
                             disabled={!row.assigned}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-purple-700 text-white hover:bg-purple-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`${actionBtnClass} border-purple-200 bg-purple-50 hover:bg-purple-100`}
+                            title={
+                              row.skorAkhir !== null && row.skorAkhir !== undefined
+                                ? "Edit Nilai"
+                                : "Nilai"
+                            }
+                            aria-label={
+                              row.skorAkhir !== null && row.skorAkhir !== undefined
+                                ? "Edit Nilai"
+                                : "Nilai"
+                            }
                           >
-                            <Star className="h-4 w-4" />
-                            {row.skor !== null && row.skor !== undefined
-                              ? "Edit Nilai"
-                              : "Nilai"}
+                            <Star className="h-4 w-4 text-purple-700" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleResetByJuri(row)}
+                            disabled={actionLoading || !row.juri_id}
+                            className={`${actionBtnClass} border-red-200 bg-red-50 hover:bg-red-100`}
+                            title="Reset Nilai Berdasarkan Juri"
+                            aria-label="Reset Nilai Berdasarkan Juri"
+                          >
+                            <RotateCcw className="h-4 w-4 text-red-700" />
                           </button>
                         </div>
                       </td>
@@ -793,8 +847,9 @@ const PenilaianAdmin = () => {
           </div>
 
           <div className="px-5 py-3 border-t border-slate-200 text-xs text-slate-500">
-            Admin dapat mengisi semua slot penilaian, tetapi nilai tetap masuk
-            ke slot juri yang ditugaskan.
+            Admin dapat mengisi semua Juri penilaian, tetapi nilai tetap masuk
+            ke juri yang ditugaskan. Admin juga dapat mereset semua nilai
+            atau mereset nilai berdasarkan juri.
           </div>
         </div>
       </div>
@@ -809,8 +864,7 @@ const PenilaianAdmin = () => {
         open={openNilai}
         onClose={() => setOpenNilai(false)}
         row={rowNilai}
-        initialScore={rowNilai?.skor ?? ""}
-        initialCatatan={rowNilai?.catatan ?? ""}
+        initialData={rowNilai?.penilaian_id ? rowNilai : {}}
         onSave={saveNilai}
       />
     </div>

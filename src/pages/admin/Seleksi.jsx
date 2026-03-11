@@ -123,7 +123,7 @@ const SeleksiPeserta = () => {
           );
 
           const totalNilai = penilaianPeserta.reduce(
-            (sum, nilai) => sum + Number(nilai.skor || 0),
+            (sum, nilai) => sum + Number(nilai.skor_akhir || 0),
             0
           );
 
@@ -137,6 +137,7 @@ const SeleksiPeserta = () => {
             urusan: item.urusan_utama || "-",
             tglDaftar: item.created_at || "",
             status: item.status_seleksi || "Diproses",
+            totalNilai,
             skor: rataRata3Juri,
           };
         });
@@ -171,7 +172,6 @@ const SeleksiPeserta = () => {
       let nextTahap = currentRow.tahapSeleksi;
       let nextStatus = value;
 
-      // hanya naik tahap kalau pilih LOL0S
       if (value === "Lolos") {
         if (currentRow.tahapSeleksi === "final") {
           nextTahap = "final";
@@ -182,7 +182,6 @@ const SeleksiPeserta = () => {
         }
       }
 
-      // kalau Diproses / Tidak Lolos => tetap di tahap sekarang
       if (value === "Diproses") {
         nextTahap = currentRow.tahapSeleksi;
         nextStatus = "Diproses";
@@ -246,7 +245,6 @@ const SeleksiPeserta = () => {
     const keyword = q.trim().toLowerCase();
 
     return data.filter((row) => {
-      // TAB Semua hanya untuk stage "all"
       const tabOk = row.tahapSeleksi === activeTab;
 
       const searchOk =
