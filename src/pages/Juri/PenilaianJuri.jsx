@@ -33,6 +33,7 @@ const mapPenugasanItem = (item) => ({
   waktu_pengembangan: item.waktu_pengembangan || "",
   waktu_uji_coba: item.waktu_uji_coba || "",
   waktu_penerapan: item.waktu_penerapan || "",
+  link_video: item.link_video || "",
   rancangan_bangun: item.rancangan_bangun || "",
   tujuan_inovasi: item.tujuan_inovasi || "",
   manfaat_diperoleh: item.manfaat_diperoleh || "",
@@ -520,7 +521,8 @@ const PenilaianJuri = () => {
           </div>
 
           <div className="px-5 py-3 border-t border-slate-200 text-xs text-slate-500">
-            Juri hanya dapat memberi nilai dan mereset penilaian pada penugasan miliknya sendiri.
+            Juri hanya dapat memberi nilai dan mereset penilaian pada penugasan
+            miliknya sendiri.
           </div>
         </div>
       </div>

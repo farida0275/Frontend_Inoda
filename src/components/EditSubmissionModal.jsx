@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { X, Save, Pencil, Upload, FileText, ChevronDown } from "lucide-react";
+import {
+  X,
+  Save,
+  Pencil,
+  Upload,
+  FileText,
+  ChevronDown,
+  Link as LinkIcon,
+} from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -69,6 +77,7 @@ const InputField = ({
   onChange,
   type = "text",
   placeholder,
+  icon: Icon = Pencil,
 }) => (
   <div className="space-y-1">
     <label className="text-xs font-semibold text-slate-500">{label}</label>
@@ -81,7 +90,7 @@ const InputField = ({
         placeholder={placeholder}
         className="flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
       />
-      <Pencil className="h-4 w-4 text-slate-400" />
+      <Icon className="h-4 w-4 text-slate-400" />
     </div>
   </div>
 );
@@ -201,6 +210,7 @@ const EditSubmissionModal = ({
     waktu_uji_coba: "",
     waktu_penerapan: "",
     waktu_pengembangan: "",
+    link_video: "",
     rancangan_bangun: "",
     tujuan_inovasi: "",
     manfaat_diperoleh: "",
@@ -266,6 +276,7 @@ const EditSubmissionModal = ({
       waktu_uji_coba: formatDateInput(data?.waktu_uji_coba),
       waktu_penerapan: formatDateInput(data?.waktu_penerapan),
       waktu_pengembangan: formatDateInput(data?.waktu_pengembangan),
+      link_video: data?.link_video || "",
       rancangan_bangun: data?.rancangan_bangun || "",
       tujuan_inovasi: data?.tujuan_inovasi || "",
       manfaat_diperoleh: data?.manfaat_diperoleh || "",
@@ -479,6 +490,15 @@ const EditSubmissionModal = ({
                     onChange={handleChange}
                   />
                 </div>
+
+                <InputField
+                  label="Link Video"
+                  name="link_video"
+                  value={form.link_video}
+                  onChange={handleChange}
+                  placeholder="Masukkan link video YouTube / Drive / lainnya"
+                  icon={LinkIcon}
+                />
               </section>
 
               <section className="space-y-4">

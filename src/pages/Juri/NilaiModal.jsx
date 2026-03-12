@@ -4,13 +4,23 @@ import { Star, X } from "lucide-react";
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-purple-200";
 
+const helperClass =
+  "mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] leading-5 text-slate-600";
+
 const SectionTitle = ({ children }) => (
   <div className="mt-6 mb-3">
     <h4 className="text-sm font-extrabold text-slate-900">{children}</h4>
   </div>
 );
 
-const ScoreInput = ({ label, value, onChange, min = 0, max = 100 }) => (
+const ScoreInput = ({
+  label,
+  value,
+  onChange,
+  min = 0,
+  max = 100,
+  description = "",
+}) => (
   <div>
     <label className="block text-xs font-bold text-slate-700 mb-2">
       {label}
@@ -26,8 +36,24 @@ const ScoreInput = ({ label, value, onChange, min = 0, max = 100 }) => (
     <p className="mt-1 text-[11px] text-slate-500">
       Nilai {min} - {max}
     </p>
+
+    {description ? <div className={helperClass}>{description}</div> : null}
   </div>
 );
+
+const substansiDescriptions = {
+  kesiapterapan:
+    "Komponen ini terkait dengan tingkat kondisi kematangan atau kesiapterapan suatu hasil penelitian (research) dan pengembangan inovasi dan teknologi yang diukur secara sistematis agar dapat diadopsi oleh pengguna, baik oleh pemerintah, industri, atau masyarakat.",
+  kebaharuan:
+    "Komponen ini terkait dengan kebaruan ide dari penemuan tersebut, yang berbeda dari yang sudah ada atau yang sudah dikenal sebelumnya.",
+  komersialisasi:
+    "Komponen ini terkait dengan potensi dapat dikembangkan lebih lanjut dan menjadi ikon inovasi.",
+  usp: "Unique selling point (USP) adalah suatu alasan kenapa masyarakat rela membelanjakan uangnya untuk membeli produk pilihannya pada hasil inovasi teknologi Anda, daripada orang lain.",
+  kemanfaatan:
+    "Komponen ini terkait dengan daya ungkit potensi kemanfaatan secara luas dan bernilai tinggi.",
+  kedalaman:
+    "Komponen ini berkaitan bobot kualitas atau kerumitan atau kecanggihan inovasi.",
+};
 
 const NilaiModal = ({ open, onClose, row, initialData = {}, onSave }) => {
   const [form, setForm] = useState({
@@ -218,6 +244,7 @@ const NilaiModal = ({ open, onClose, row, initialData = {}, onSave }) => {
               </div>
 
               <SectionTitle>Substansi Inovasi</SectionTitle>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ScoreInput
                   label="Tingkat Kesiapterapan"
@@ -225,6 +252,7 @@ const NilaiModal = ({ open, onClose, row, initialData = {}, onSave }) => {
                   max={20}
                   value={form.substansi_kesiapterapan}
                   onChange={(v) => updateField("substansi_kesiapterapan", v)}
+                  description={substansiDescriptions.kesiapterapan}
                 />
                 <ScoreInput
                   label="Kebaharuan (Novelty)"
@@ -232,6 +260,7 @@ const NilaiModal = ({ open, onClose, row, initialData = {}, onSave }) => {
                   max={10}
                   value={form.substansi_kebaharuan}
                   onChange={(v) => updateField("substansi_kebaharuan", v)}
+                  description={substansiDescriptions.kebaharuan}
                 />
                 <ScoreInput
                   label="Potensi Komersialisasi / Keberlanjutan"
@@ -239,6 +268,7 @@ const NilaiModal = ({ open, onClose, row, initialData = {}, onSave }) => {
                   max={20}
                   value={form.substansi_komersialisasi}
                   onChange={(v) => updateField("substansi_komersialisasi", v)}
+                  description={substansiDescriptions.komersialisasi}
                 />
                 <ScoreInput
                   label="Unique Selling Point"
@@ -246,6 +276,7 @@ const NilaiModal = ({ open, onClose, row, initialData = {}, onSave }) => {
                   max={20}
                   value={form.substansi_usp}
                   onChange={(v) => updateField("substansi_usp", v)}
+                  description={substansiDescriptions.usp}
                 />
                 <ScoreInput
                   label="Kemanfaatan Produk Inovasi"
@@ -253,6 +284,7 @@ const NilaiModal = ({ open, onClose, row, initialData = {}, onSave }) => {
                   max={35}
                   value={form.substansi_kemanfaatan}
                   onChange={(v) => updateField("substansi_kemanfaatan", v)}
+                  description={substansiDescriptions.kemanfaatan}
                 />
                 <ScoreInput
                   label="Tingkat Kedalaman"
@@ -260,6 +292,7 @@ const NilaiModal = ({ open, onClose, row, initialData = {}, onSave }) => {
                   max={15}
                   value={form.substansi_kedalaman}
                   onChange={(v) => updateField("substansi_kedalaman", v)}
+                  description={substansiDescriptions.kedalaman}
                 />
               </div>
 

@@ -8,6 +8,7 @@ import {
   ArrowRight01Icon,
   ArrowLeft01Icon,
   Upload01Icon as UploadIcon,
+  Link01Icon,
 } from "hugeicons-react";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -97,6 +98,7 @@ const FormDaftar = () => {
       astaCita: "",
       urusanUtama: "",
       urusanIrisan: "",
+      linkVideo: "",
       rancangBangun: "",
       tujuan: "",
       manfaat: "",
@@ -104,7 +106,6 @@ const FormDaftar = () => {
       waktuInisiatif: "",
       waktuUjiCoba: "",
       waktuPenerapan: "",
-      waktuPengembangan: "",
     },
     mode: "onTouched",
   });
@@ -175,9 +176,9 @@ const FormDaftar = () => {
       "waktuInisiatif",
       "waktuUjiCoba",
       "waktuPenerapan",
-      "waktuPengembangan",
     ],
     2: [
+      "linkVideo",
       "rancangBangun",
       "tujuan",
       "manfaat",
@@ -206,6 +207,17 @@ const FormDaftar = () => {
     return true;
   };
 
+  const validateUrl = (value) => {
+    if (!value || !value.trim()) return "Link video wajib diisi";
+    try {
+      // eslint-disable-next-line no-new
+      new URL(value);
+      return true;
+    } catch {
+      return "Format link video tidak valid";
+    }
+  };
+
   const onSubmit = async (data) => {
     try {
       setLoadingSubmit(true);
@@ -228,6 +240,7 @@ const FormDaftar = () => {
       formData.append("kategori", data.kategoriInovasi);
       formData.append("tematik", data.astaCita);
       formData.append("urusan_utama", data.urusanUtama);
+      formData.append("link_video", data.linkVideo);
 
       if (data.urusanIrisan) {
         formData.append("urusan_beririsan", data.urusanIrisan);
@@ -723,6 +736,34 @@ const FormDaftar = () => {
             </h3>
 
             <div className="space-y-6 mt-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Link Video <span className="text-red-500">*</span>
+                </label>
+
+                <div className="mt-2 relative">
+                  <Link01Icon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="url"
+                    placeholder="https://youtube.com/... atau https://drive.google.com/..."
+                    className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                    {...register("linkVideo", {
+                      validate: validateUrl,
+                    })}
+                  />
+                </div>
+
+                {errors.linkVideo ? (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.linkVideo.message}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Wajib diisi. Bisa YouTube, Google Drive, atau link video lainnya.
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className="text-sm font-medium text-gray-700">
                   Rancang bangun (Minimal 300 kata)

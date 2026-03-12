@@ -23,6 +23,41 @@ const formatDate = (value) => {
   });
 };
 
+const getStatusBadgeClass = (status) => {
+  if (status === "Lolos") {
+    return "bg-emerald-50 text-emerald-700 border border-emerald-200";
+  }
+
+  if (status === "Tidak Lolos") {
+    return "bg-red-50 text-red-700 border border-red-200";
+  }
+
+  return "bg-amber-50 text-amber-700 border border-amber-200";
+};
+
+const getTahapLabel = (tahap) => {
+  if (tahap === "administratif") return "Administratif";
+  if (tahap === "semifinal") return "Semi Final";
+  if (tahap === "final") return "Final";
+  return "Awal";
+};
+
+const getTahapBadgeClass = (tahap) => {
+  if (tahap === "administratif") {
+    return "bg-blue-50 text-blue-700 border border-blue-200";
+  }
+
+  if (tahap === "semifinal") {
+    return "bg-purple-50 text-purple-700 border border-purple-200";
+  }
+
+  if (tahap === "final") {
+    return "bg-indigo-50 text-indigo-700 border border-indigo-200";
+  }
+
+  return "bg-slate-50 text-slate-700 border border-slate-200";
+};
+
 const SubmissionsPage = () => {
   const navigate = useNavigate();
 
@@ -107,6 +142,9 @@ const SubmissionsPage = () => {
           waktuPenerapan: formatDate(item.waktu_penerapan),
           skor: Number(item.skor_final ?? 0),
 
+          statusSeleksi: item.status_seleksi || "Diproses",
+          tahapSeleksi: item.tahap_seleksi || "all",
+
           kategori: item.kategori || "",
           kategori_nama: kategoriMap.get(String(item.kategori)) || "-",
           nama_pemda: item.nama_pemda || "",
@@ -122,6 +160,7 @@ const SubmissionsPage = () => {
           waktu_uji_coba: item.waktu_uji_coba || "",
           waktu_penerapan: item.waktu_penerapan || "",
           waktu_pengembangan: item.waktu_pengembangan || "",
+          link_video: item.link_video || "",
 
           rancangan_bangun: item.rancangan_bangun || "",
           tujuan_inovasi: item.tujuan_inovasi || "",
@@ -157,7 +196,7 @@ const SubmissionsPage = () => {
     if (!kw) return rows;
 
     return rows.filter((r) =>
-      `${r.namaPeserta} ${r.namaInovasi} ${r.kategoriNama} ${r.tahapan} ${r.urusan} ${r.waktuInisiatif}`
+      `${r.namaPeserta} ${r.namaInovasi} ${r.kategoriNama} ${r.tahapan} ${r.urusan} ${r.waktuInisiatif} ${r.statusSeleksi} ${r.tahapSeleksi} ${r.link_video}`
         .toLowerCase()
         .includes(kw)
     );
@@ -200,6 +239,7 @@ const SubmissionsPage = () => {
       formData.append("tematik", form.tematik || "");
       formData.append("urusan_utama", form.urusan_utama || "");
       formData.append("urusan_beririsan", form.urusan_beririsan || "");
+      formData.append("link_video", form.link_video || "");
 
       if (form.waktu_uji_coba !== undefined) {
         formData.append("waktu_uji_coba", form.waktu_uji_coba || "");
@@ -269,6 +309,10 @@ const SubmissionsPage = () => {
         waktuPenerapan: formatDate(updated.waktu_penerapan),
         skor: Number(updated.skor_final ?? 0),
 
+        statusSeleksi:
+          updated.status_seleksi || selectedRow.statusSeleksi || "Diproses",
+        tahapSeleksi: updated.tahap_seleksi || selectedRow.tahapSeleksi || "all",
+
         kategori: updated.kategori || "",
         kategori_nama: kategoriMap.get(String(updated.kategori)) || "-",
         nama_pemda: updated.nama_pemda || "",
@@ -284,6 +328,7 @@ const SubmissionsPage = () => {
         waktu_uji_coba: updated.waktu_uji_coba || "",
         waktu_penerapan: updated.waktu_penerapan || "",
         waktu_pengembangan: updated.waktu_pengembangan || "",
+        link_video: updated.link_video || "",
 
         rancangan_bangun: updated.rancangan_bangun || "",
         tujuan_inovasi: updated.tujuan_inovasi || "",
@@ -313,7 +358,7 @@ const SubmissionsPage = () => {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6">
+    <div className="w-full max-w-7xl mx-auto p-6">
       <div className="flex items-center justify-between gap-4 mb-6">
         <div className="w-full max-w-sm relative">
           <Search01Icon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -331,7 +376,7 @@ const SubmissionsPage = () => {
           className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-purple-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-800 transition"
         >
           <Add01Icon className="w-4 h-4" />
-          Tambah Submisis
+          Tambah Submisi
         </button>
       </div>
 
@@ -346,31 +391,37 @@ const SubmissionsPage = () => {
           <table className="w-full text-sm">
             <thead className="bg-white">
               <tr className="border-b border-gray-100">
-                <th className="text-left font-semibold text-gray-700 px-4 py-3">
+                <th className="text-left font-semibold text-gray-700 px-3 py-3">
                   Nama Peserta
                 </th>
-                <th className="text-left font-semibold text-gray-700 px-4 py-3">
+                <th className="text-left font-semibold text-gray-700 px-3 py-3">
                   Nama Inovasi
                 </th>
-                <th className="text-left font-semibold text-gray-700 px-4 py-3">
+                <th className="text-left font-semibold text-gray-700 px-3 py-3">
                   Kategori
                 </th>
-                <th className="text-left font-semibold text-gray-700 px-4 py-3">
+                <th className="text-left font-semibold text-gray-700 px-3 py-3">
                   Tahapan
                 </th>
-                <th className="text-left font-semibold text-gray-700 px-4 py-3">
+                <th className="text-left font-semibold text-gray-700 px-3 py-3">
                   Urusan
                 </th>
-                <th className="text-left font-semibold text-gray-700 px-4 py-3">
+                <th className="text-left font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
                   Waktu Inisiatif
                 </th>
-                <th className="text-left font-semibold text-gray-700 px-4 py-3">
+                <th className="text-left font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
                   Waktu Uji Coba
                 </th>
-                <th className="text-left font-semibold text-gray-700 px-4 py-3">
+                <th className="text-left font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
                   Waktu Penerapan
                 </th>
-                <th className="text-left font-semibold text-gray-700 px-4 py-3">
+                <th className="text-left font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
+                  Tahap
+                </th>
+                <th className="text-left font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
+                  Status
+                </th>
+                <th className="text-center font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
                   Aksi
                 </th>
               </tr>
@@ -380,8 +431,8 @@ const SubmissionsPage = () => {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={9}
-                    className="px-4 py-8 text-center text-gray-500"
+                    colSpan={11}
+                    className="px-3 py-8 text-center text-gray-500"
                   >
                     Memuat data...
                   </td>
@@ -389,8 +440,8 @@ const SubmissionsPage = () => {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
-                    className="px-4 py-8 text-center text-gray-500"
+                    colSpan={11}
+                    className="px-3 py-8 text-center text-gray-500"
                   >
                     Data tidak ditemukan.
                   </td>
@@ -401,33 +452,57 @@ const SubmissionsPage = () => {
                     key={row.id}
                     className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60 transition"
                   >
-                    <td className="px-4 py-3 text-gray-900">{row.namaPeserta}</td>
-                    <td className="px-4 py-3 text-gray-900">{row.namaInovasi}</td>
-                    <td className="px-4 py-3 text-gray-900">{row.kategoriNama}</td>
-                    <td className="px-4 py-3 text-gray-900">{row.tahapan}</td>
-                    <td className="px-4 py-3 text-gray-900">{row.urusan}</td>
-                    <td className="px-4 py-3 text-gray-900">{row.waktuInisiatif}</td>
-                    <td className="px-4 py-3 text-gray-900">{row.waktuUjiCoba}</td>
-                    <td className="px-4 py-3 text-gray-900">{row.waktuPenerapan}</td>
+                    <td className="px-3 py-3 text-gray-900">{row.namaPeserta}</td>
+                    <td className="px-3 py-3 text-gray-900">{row.namaInovasi}</td>
+                    <td className="px-3 py-3 text-gray-900">{row.kategoriNama}</td>
+                    <td className="px-3 py-3 text-gray-900">{row.tahapan}</td>
+                    <td className="px-3 py-3 text-gray-900">{row.urusan}</td>
+                    <td className="px-3 py-3 text-gray-900 whitespace-nowrap">
+                      {row.waktuInisiatif}
+                    </td>
+                    <td className="px-3 py-3 text-gray-900 whitespace-nowrap">
+                      {row.waktuUjiCoba}
+                    </td>
+                    <td className="px-3 py-3 text-gray-900 whitespace-nowrap">
+                      {row.waktuPenerapan}
+                    </td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${getTahapBadgeClass(
+                          row.tahapSeleksi
+                        )}`}
+                      >
+                        {getTahapLabel(row.tahapSeleksi)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${getStatusBadgeClass(
+                          row.statusSeleksi
+                        )}`}
+                      >
+                        {row.statusSeleksi}
+                      </span>
+                    </td>
 
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                    <td className="px-3 py-3">
+                      <div className="flex items-center justify-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => handleEdit(row)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition"
+                          className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-2 text-gray-700 hover:bg-gray-50 transition"
+                          title="Edit"
                         >
                           <Edit02Icon className="w-4 h-4" />
-                          Edit
                         </button>
 
                         <button
                           type="button"
                           onClick={() => handleDetail(row)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition"
+                          className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-2 text-gray-700 hover:bg-gray-50 transition"
+                          title="Lihat Detail"
                         >
                           <EyeIcon className="w-4 h-4" />
-                          Lihat Detail
                         </button>
                       </div>
                     </td>

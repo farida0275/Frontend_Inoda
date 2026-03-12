@@ -143,8 +143,6 @@ const UserDashboard = () => {
   }, [rowsWithKategori, search]);
 
   const stats = useMemo(() => {
-    const totalPeserta = rowsWithKategori.length;
-
     const countByKategoriName = (targetNames) => {
       const normalizedTargets = targetNames.map((item) => normalizeText(item));
 
@@ -154,11 +152,7 @@ const UserDashboard = () => {
     };
 
     return [
-      {
-        title: "Total Peserta",
-        value: totalPeserta,
-        icon: Users,
-      },
+      { title: "Total Peserta", value: rowsWithKategori.length, icon: Users },
       {
         title: "Inovasi Daerah",
         value: countByKategoriName(["Inovasi Daerah"]),

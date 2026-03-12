@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Eye, Search, Trash2 } from "lucide-react";
+import { Eye, Search, Trash2, RotateCcw } from "lucide-react";
 import DetailSubmissionModal from "../../components/LihatDetail.jsx";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -22,6 +22,7 @@ const DataPeserta = () => {
   const [inovasiList, setInovasiList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [openDetail, setOpenDetail] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
@@ -118,6 +119,7 @@ const DataPeserta = () => {
           jenis_inovasi: item.jenis_inovasi || "",
           bentuk_inovasi: item.bentuk_inovasi || "",
           tematik: item.tematik || "",
+          link_video: item.link_video || "",
 
           rancangan_bangun: item.rancangan_bangun || "",
           tujuan_inovasi: item.tujuan_inovasi || "",
@@ -165,7 +167,8 @@ const DataPeserta = () => {
         r.kategoriNama?.toLowerCase().includes(s) ||
         r.tahapan?.toLowerCase().includes(s) ||
         r.urusan?.toLowerCase().includes(s) ||
-        r.waktuInisiatif?.toLowerCase().includes(s)
+        r.waktuInisiatif?.toLowerCase().includes(s) ||
+        r.link_video?.toLowerCase().includes(s)
       );
     });
   }, [q, rows]);
@@ -210,6 +213,56 @@ const DataPeserta = () => {
     }
   };
 
+  const handleResetAll = async () => {
+    if (rows.length === 0) {
+      alert("Belum ada data peserta yang bisa direset.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Apakah yakin ingin mereset semua data peserta? Tindakan ini akan menghapus seluruh data peserta."
+    );
+    if (!confirmed) return;
+
+    try {
+      setActionLoading(true);
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("Token login tidak ditemukan. Silakan login ulang.");
+      }
+
+      const response = await fetch(`${API_URL}/data-peserta/reset/all`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result?.errors?.join(", ") ||
+            result?.message ||
+            "Gagal mereset semua data peserta."
+        );
+      }
+
+      setRows([]);
+      setSelectedRow(null);
+      setOpenDetail(false);
+
+      alert(result?.message || "Semua data peserta berhasil direset.");
+    } catch (error) {
+      console.error("Reset all peserta error:", error);
+      alert(error.message || "Gagal mereset semua data peserta.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="mx-auto w-full max-w-7xl">
@@ -220,7 +273,7 @@ const DataPeserta = () => {
           </p>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
@@ -230,6 +283,16 @@ const DataPeserta = () => {
               className="w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-200"
             />
           </div>
+
+          <button
+            type="button"
+            onClick={handleResetAll}
+            disabled={actionLoading || rows.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RotateCcw className="h-4 w-4" />
+            {actionLoading ? "Memproses..." : "Reset Data"}
+          </button>
         </div>
 
         {serverError && (
