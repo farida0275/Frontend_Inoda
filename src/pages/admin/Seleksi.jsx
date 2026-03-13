@@ -3,27 +3,70 @@ import { Search } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// KEY tetap mengikuti backend
 const TABS = [
-  { key: "all", label: "Semua" },
-  { key: "administratif", label: "Seleksi Administratif" },
-  { key: "semifinal", label: "Semi Final" },
-  { key: "final", label: "Final" },
+  { key: "all", label: "Seleksi Administratif" },
+  { key: "administratif", label: "Semi Final" },
+  { key: "semifinal", label: "Final" },
+  { key: "final", label: "Pemenang" },
 ];
 
 const stageLabel = (key) => {
-  if (key === "administratif") return "Seleksi Administratif";
-  if (key === "semifinal") return "Semi Final";
-  if (key === "final") return "Final";
-  return "Semua";
+  if (key === "all") return "Seleksi Administratif";
+  if (key === "administratif") return "Semi Final";
+  if (key === "semifinal") return "Final";
+  if (key === "final") return "Pemenang";
+  return "-";
+};
+
+const REGULAR_STATUS_OPTIONS = ["Diproses", "Lolos", "Tidak Lolos"];
+
+const FINAL_STATUS_OPTIONS = [
+  "Diproses",
+  "Juara 1",
+  "Juara 2",
+  "Juara 3",
+  "Harapan 1",
+  "Harapan 2",
+  "Harapan 3",
+  "Finalis",
+];
+
+const getStatusOptions = (tahapSeleksi) => {
+  return tahapSeleksi === "final"
+    ? FINAL_STATUS_OPTIONS
+    : REGULAR_STATUS_OPTIONS;
 };
 
 const statusStyle = (status) => {
   if (status === "Lolos") {
     return "bg-emerald-50 text-emerald-700 border-emerald-200";
   }
+
   if (status === "Tidak Lolos") {
     return "bg-red-50 text-red-700 border-red-200";
   }
+
+  if (
+    status === "Juara 1" ||
+    status === "Juara 2" ||
+    status === "Juara 3"
+  ) {
+    return "bg-violet-50 text-violet-700 border-violet-200";
+  }
+
+  if (
+    status === "Harapan 1" ||
+    status === "Harapan 2" ||
+    status === "Harapan 3"
+  ) {
+    return "bg-sky-50 text-sky-700 border-sky-200";
+  }
+
+  if (status === "Finalis") {
+    return "bg-indigo-50 text-indigo-700 border-indigo-200";
+  }
+
   return "bg-amber-50 text-amber-700 border-amber-200";
 };
 
@@ -33,6 +76,7 @@ const formatScore = (value) => {
   return num.toFixed(2);
 };
 
+// urutan key backend tetap
 const getNextStage = (currentStage) => {
   if (currentStage === "all") return "administratif";
   if (currentStage === "administratif") return "semifinal";
@@ -113,6 +157,7 @@ const SeleksiPeserta = () => {
         const pesertaList = Array.isArray(pesertaResult?.data)
           ? pesertaResult.data
           : [];
+
         const penilaianList = Array.isArray(penilaianResult?.data)
           ? penilaianResult.data
           : [];
@@ -172,24 +217,25 @@ const SeleksiPeserta = () => {
       let nextTahap = currentRow.tahapSeleksi;
       let nextStatus = value;
 
-      if (value === "Lolos") {
-        if (currentRow.tahapSeleksi === "final") {
-          nextTahap = "final";
-          nextStatus = "Lolos";
-        } else {
+      // tahap final = status hasil akhir, tidak pindah tahap lagi
+      if (currentRow.tahapSeleksi === "final") {
+        nextTahap = "final";
+        nextStatus = value;
+      } else {
+        if (value === "Lolos") {
           nextTahap = getNextStage(currentRow.tahapSeleksi);
           nextStatus = "Diproses";
         }
-      }
 
-      if (value === "Diproses") {
-        nextTahap = currentRow.tahapSeleksi;
-        nextStatus = "Diproses";
-      }
+        if (value === "Diproses") {
+          nextTahap = currentRow.tahapSeleksi;
+          nextStatus = "Diproses";
+        }
 
-      if (value === "Tidak Lolos") {
-        nextTahap = currentRow.tahapSeleksi;
-        nextStatus = "Tidak Lolos";
+        if (value === "Tidak Lolos") {
+          nextTahap = currentRow.tahapSeleksi;
+          nextStatus = "Tidak Lolos";
+        }
       }
 
       const response = await fetch(`${API_URL}/data-peserta/${id}/seleksi`, {
@@ -265,7 +311,7 @@ const SeleksiPeserta = () => {
       <div className="relative mb-4">
         <div className="absolute left-0 right-0 bottom-0 h-px bg-slate-200" />
 
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-2 flex-wrap">
           {TABS.map((t) => {
             const active = activeTab === t.key;
             return (
@@ -291,7 +337,7 @@ const SeleksiPeserta = () => {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="px-5 py-4 flex items-center justify-between gap-3">
+        <div className="px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
           <div className="text-xs text-slate-500">
             Tahapan:{" "}
             <span className="font-semibold text-slate-700">
@@ -380,9 +426,11 @@ const SeleksiPeserta = () => {
                           row.status
                         )}`}
                       >
-                        <option value="Diproses">Diproses</option>
-                        <option value="Lolos">Lolos</option>
-                        <option value="Tidak Lolos">Tidak Lolos</option>
+                        {getStatusOptions(row.tahapSeleksi).map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
                       </select>
                     </td>
                   </tr>

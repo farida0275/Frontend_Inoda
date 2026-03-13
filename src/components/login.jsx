@@ -60,12 +60,16 @@ const LoginPage = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      if (user.role === "admin") {
+      const role = user.role?.toLowerCase();
+
+      if (role === "admin") {
         navigate("/admin");
-      } else if (user.role === "juri") {
-        navigate("/Juri");
-      } else {
+      } else if (role === "juri") {
+        navigate("/Juri/Penilaian");
+      } else if (role === "peserta") {
         navigate("/participant");
+      } else {
+        navigate("/");
       }
     } catch (error) {
       console.error("Login error:", error);

@@ -21,6 +21,9 @@ const mapPenugasanItem = (item) => ({
   urusan: item.urusan_utama || "-",
   tahapan: item.tahapan_inovasi || "-",
 
+  tahap_seleksi: item.tahap_seleksi || "",
+  status_seleksi: item.status_seleksi || "",
+
   nama_inovasi: item.nama_inovasi || "-",
   tahapan_inovasi: item.tahapan_inovasi || "-",
   inisiator_inovasi: item.inisiator_inovasi || "-",
@@ -363,8 +366,8 @@ const PenilaianJuri = () => {
             Penilaian Juri
           </h1>
           <p className="text-sm text-slate-500">
-            Halo {currentUser?.nama || "Juri"}, berikut daftar penugasan yang
-            bisa kamu nilai.
+            Halo {currentUser?.nama || "Juri"}, berikut daftar peserta yang
+            dapat kamu nilai.
           </p>
         </div>
 
@@ -372,11 +375,10 @@ const PenilaianJuri = () => {
           <div className="px-5 py-4 flex flex-col gap-3 border-b border-slate-200 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-sm font-bold text-slate-800">
-                Daftar Penugasan Saya
+                Daftar Peserta Penilaian Juri
               </div>
               <div className="mt-1 text-xs text-slate-500">
-                Total penugasan:{" "}
-                <span className="font-semibold">{rows.length}</span>
+                Total peserta: <span className="font-semibold">{rows.length}</span>
                 {" • "}
                 Sudah dinilai:{" "}
                 <span className="font-semibold">{jumlahSudahDinilai}</span>
@@ -434,7 +436,7 @@ const PenilaianJuri = () => {
                       colSpan={9}
                       className="px-4 py-10 text-center text-slate-500"
                     >
-                      Belum ada penugasan untuk akun ini.
+                      Belum ada peserta yang dapat dinilai untuk akun ini.
                     </td>
                   </tr>
                 ) : (
