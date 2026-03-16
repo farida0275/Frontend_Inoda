@@ -804,9 +804,34 @@ const FormDaftar = () => {
                   </p>
                 ) : (
                   <p className="text-xs text-gray-500 mt-1">
-                    Wajib diisi. Bisa YouTube, Google Drive, atau link video lainnya.
+                    Wajib diisi.
                   </p>
                 )}
+                <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-slate-700 leading-6">
+                  <p className="font-semibold text-slate-800">
+                    Kualitas inovasi daerah dapat dibuktikan dengan video penerapan inovasi daerah
+                    (2 Tahun Terakhir) (file MP4 maksimal ukuran video 100MB).
+                  </p>
+
+                  <p className="mt-2 font-medium text-slate-800">Data Pendukung:</p>
+
+                  <p className="mt-1">
+                    Ketentuan video memvisualisasikan 5 substansi:
+                  </p>
+
+                  <ol className="mt-2 list-decimal pl-5 space-y-1">
+                    <li>Latar belakang inovasi;</li>
+                    <li>Penjaringan ide;</li>
+                    <li>Pemilihan ide;</li>
+                    <li>Manfaat inovasi; dan</li>
+                    <li>Dampak inovasi.</li>
+                  </ol>
+
+                  <p className="mt-2">
+                    Video inovasi dilengkapi dengan cover thumbnail dan ada logo kemendagri
+                    dengan format jpg/jpeg/png.
+                  </p>
+                </div>
               </div>
 
               <div>
