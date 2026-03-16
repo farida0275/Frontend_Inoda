@@ -31,13 +31,61 @@ const includesText = (value, keyword) =>
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
 
+const readResponseSafely = async (response) => {
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return await response.json();
+  }
+  return await response.text();
+};
+
+const getPeriodStatus = (start, end) => {
+  if (!start || !end) {
+    return {
+      allowed: false,
+      label: "Belum diatur",
+    };
+  }
+
+  const now = new Date();
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return {
+      allowed: false,
+      label: "Tanggal tidak valid",
+    };
+  }
+
+  if (now < startDate) {
+    return {
+      allowed: false,
+      label: "Pendaftaran belum dibuka",
+    };
+  }
+
+  if (now > endDate) {
+    return {
+      allowed: false,
+      label: "Pendaftaran sudah ditutup",
+    };
+  }
+
+  return {
+    allowed: true,
+    label: "Pendaftaran dibuka",
+  };
+};
+
 const UserDashboard = () => {
-  const [activeTab, setActiveTab] = useState("Semua");
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState([]);
   const [inovasiList, setInovasiList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState("");
+
+  const [submissionSetting, setSubmissionSetting] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -63,22 +111,26 @@ const UserDashboard = () => {
           }),
         ]);
 
-        const pesertaResult = await pesertaResponse.json();
-        const inovasiResult = await inovasiResponse.json();
+        const pesertaResult = await readResponseSafely(pesertaResponse);
+        const inovasiResult = await readResponseSafely(inovasiResponse);
 
         if (!pesertaResponse.ok) {
           throw new Error(
-            pesertaResult?.errors?.join(", ") ||
-              pesertaResult?.message ||
-              "Gagal mengambil data peserta."
+            typeof pesertaResult === "object"
+              ? pesertaResult?.errors?.join(", ") ||
+                  pesertaResult?.message ||
+                  "Gagal mengambil data peserta."
+              : "Response server bukan JSON saat mengambil data peserta."
           );
         }
 
         if (!inovasiResponse.ok) {
           throw new Error(
-            inovasiResult?.errors?.join(", ") ||
-              inovasiResult?.message ||
-              "Gagal mengambil data inovasi."
+            typeof inovasiResult === "object"
+              ? inovasiResult?.errors?.join(", ") ||
+                  inovasiResult?.message ||
+                  "Gagal mengambil data inovasi."
+              : "Response server bukan JSON saat mengambil data inovasi."
           );
         }
 
@@ -105,6 +157,52 @@ const UserDashboard = () => {
 
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    const fetchSubmissionSetting = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setSubmissionSetting(null);
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/submission-settings`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const result = await readResponseSafely(response);
+
+        if (response.status === 404) {
+          setSubmissionSetting(null);
+          return;
+        }
+
+        if (!response.ok) {
+          setSubmissionSetting(null);
+          return;
+        }
+
+        setSubmissionSetting(result?.data || null);
+      } catch (error) {
+        console.error("Fetch submission setting error:", error);
+        setSubmissionSetting(null);
+      }
+    };
+
+    fetchSubmissionSetting();
+  }, []);
+
+  const registrationPeriod = useMemo(() => {
+    return getPeriodStatus(
+      submissionSetting?.registration_start,
+      submissionSetting?.registration_end
+    );
+  }, [submissionSetting]);
 
   const kategoriMap = useMemo(() => {
     const map = new Map();
@@ -214,8 +312,8 @@ const UserDashboard = () => {
         ))}
       </div>
 
-      <div className="flex justify-between items-center">
-        <div className="relative w-64">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+        <div className="relative w-full sm:w-64">
           <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
           <input
             type="text"
@@ -226,13 +324,24 @@ const UserDashboard = () => {
           />
         </div>
 
-        <Link
-          to="/FormDaftar"
-          className="flex items-center gap-2 bg-purple-900 hover:bg-purple-800 text-white px-4 py-2 rounded-lg shadow"
-        >
-          <Plus className="w-4 h-4" />
-          Tambah Inovasi Daerah
-        </Link>
+        {registrationPeriod.allowed ? (
+          <Link
+            to="/FormDaftar"
+            className="flex items-center justify-center gap-2 bg-purple-900 hover:bg-purple-800 text-white px-4 py-2 rounded-lg shadow"
+          >
+            <Plus className="w-4 h-4" />
+            Tambah Inovasi Daerah
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="flex items-center justify-center gap-2 bg-gray-300 text-gray-600 px-4 py-2 rounded-lg shadow cursor-not-allowed"
+          >
+            <Plus className="w-4 h-4" />
+            Tambah Inovasi Daerah
+          </button>
+        )}
       </div>
 
       {serverError && (

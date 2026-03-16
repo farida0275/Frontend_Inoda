@@ -23,6 +23,72 @@ const formatDate = (value) => {
   });
 };
 
+const formatDateTime = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const readResponseSafely = async (response) => {
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return await response.json();
+  }
+  return await response.text();
+};
+
+const getPeriodStatus = (start, end, type = "default") => {
+  if (!start || !end) {
+    return {
+      allowed: false,
+      label: "Belum diatur",
+      className: "border-slate-200 bg-slate-50 text-slate-700",
+    };
+  }
+
+  const now = new Date();
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return {
+      allowed: false,
+      label: "Tanggal tidak valid",
+      className: "border-red-200 bg-red-50 text-red-700",
+    };
+  }
+
+  if (now < startDate) {
+    return {
+      allowed: false,
+      label: type === "edit" ? "Edit belum dibuka" : "Pendaftaran belum dibuka",
+      className: "border-amber-200 bg-amber-50 text-amber-700",
+    };
+  }
+
+  if (now > endDate) {
+    return {
+      allowed: false,
+      label: type === "edit" ? "Edit sudah ditutup" : "Pendaftaran sudah ditutup",
+      className: "border-slate-200 bg-slate-100 text-slate-700",
+    };
+  }
+
+  return {
+    allowed: true,
+    label: type === "edit" ? "Edit dibuka" : "Pendaftaran dibuka",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  };
+};
+
 const getStatusBadgeClass = (status) => {
   if (status === "Lolos") {
     return "bg-emerald-50 text-emerald-700 border border-emerald-200";
@@ -128,6 +194,10 @@ const SubmissionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState("");
 
+  const [submissionSetting, setSubmissionSetting] = useState(null);
+  const [loadingSetting, setLoadingSetting] = useState(true);
+  const [settingError, setSettingError] = useState("");
+
   const [openDetail, setOpenDetail] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
@@ -160,22 +230,26 @@ const SubmissionsPage = () => {
           }),
         ]);
 
-        const submissionResult = await submissionResponse.json();
-        const inovasiResult = await inovasiResponse.json();
+        const submissionResult = await readResponseSafely(submissionResponse);
+        const inovasiResult = await readResponseSafely(inovasiResponse);
 
         if (!submissionResponse.ok) {
           throw new Error(
-            submissionResult?.errors?.join(", ") ||
-              submissionResult?.message ||
-              "Gagal mengambil data submission."
+            typeof submissionResult === "object"
+              ? submissionResult?.errors?.join(", ") ||
+                  submissionResult?.message ||
+                  "Gagal mengambil data submission."
+              : "Response server bukan JSON saat mengambil data submission."
           );
         }
 
         if (!inovasiResponse.ok) {
           throw new Error(
-            inovasiResult?.errors?.join(", ") ||
-              inovasiResult?.message ||
-              "Gagal mengambil data inovasi."
+            typeof inovasiResult === "object"
+              ? inovasiResult?.errors?.join(", ") ||
+                  inovasiResult?.message ||
+                  "Gagal mengambil data inovasi."
+              : "Response server bukan JSON saat mengambil data inovasi."
           );
         }
 
@@ -210,6 +284,75 @@ const SubmissionsPage = () => {
     fetchMySubmissions();
   }, []);
 
+  useEffect(() => {
+    const fetchSubmissionSetting = async () => {
+      try {
+        setLoadingSetting(true);
+        setSettingError("");
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setSubmissionSetting(null);
+          setLoadingSetting(false);
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/submission-settings`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const result = await readResponseSafely(response);
+
+        if (response.status === 404) {
+          setSubmissionSetting(null);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            typeof result === "object"
+              ? result?.errors?.join(", ") ||
+                  result?.message ||
+                  "Gagal mengambil pengaturan periode."
+              : "Response server bukan JSON saat mengambil pengaturan periode."
+          );
+        }
+
+        setSubmissionSetting(result?.data || null);
+      } catch (error) {
+        console.error("Fetch submission setting error:", error);
+        setSettingError(
+          error.message || "Terjadi kesalahan saat mengambil pengaturan periode."
+        );
+        setSubmissionSetting(null);
+      } finally {
+        setLoadingSetting(false);
+      }
+    };
+
+    fetchSubmissionSetting();
+  }, []);
+
+  const registrationPeriod = useMemo(() => {
+    return getPeriodStatus(
+      submissionSetting?.registration_start,
+      submissionSetting?.registration_end,
+      "daftar"
+    );
+  }, [submissionSetting]);
+
+  const editPeriod = useMemo(() => {
+    return getPeriodStatus(
+      submissionSetting?.edit_start,
+      submissionSetting?.edit_end,
+      "edit"
+    );
+  }, [submissionSetting]);
+
   const filtered = useMemo(() => {
     const kw = q.trim().toLowerCase();
     if (!kw) return rows;
@@ -237,7 +380,14 @@ const SubmissionsPage = () => {
     );
   }, [q, rows]);
 
-  const goAdd = () => navigate("/participant/add");
+  const goAdd = () => {
+    if (loadingSetting) return;
+    if (!registrationPeriod.allowed) {
+      alert("Pendaftaran belum dibuka");
+      return;
+    }
+    navigate("/participant/add");
+  };
 
   const handleDetail = (row) => {
     setSelectedRow(row);
@@ -245,6 +395,13 @@ const SubmissionsPage = () => {
   };
 
   const handleEdit = (row) => {
+    if (loadingSetting) return;
+
+    if (!editPeriod.allowed) {
+      alert("Edit belum dibuka");
+      return;
+    }
+
     setSelectedRow(row);
     setOpenEdit(true);
   };
@@ -260,6 +417,14 @@ const SubmissionsPage = () => {
 
       if (!selectedRow?.id) {
         throw new Error("ID submission tidak ditemukan.");
+      }
+
+      if (loadingSetting) {
+        throw new Error("Pengaturan periode masih dimuat.");
+      }
+
+      if (!editPeriod.allowed) {
+        throw new Error("Edit belum dibuka");
       }
 
       const formData = new FormData();
@@ -321,13 +486,15 @@ const SubmissionsPage = () => {
         body: formData,
       });
 
-      const result = await response.json();
+      const result = await readResponseSafely(response);
 
       if (!response.ok) {
         throw new Error(
-          result?.errors?.join(", ") ||
-            result?.message ||
-            "Gagal memperbarui submission."
+          typeof result === "object"
+            ? result?.errors?.join(", ") ||
+                result?.message ||
+                "Gagal memperbarui submission."
+            : "Response server bukan JSON saat memperbarui submission."
         );
       }
 
@@ -359,6 +526,40 @@ const SubmissionsPage = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto p-6">
+      <div className="mb-4 space-y-3">
+        {settingError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {settingError}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className={`rounded-lg border px-4 py-3 text-sm ${registrationPeriod.className}`}>
+            <div className="font-semibold">
+              Status pendaftaran: {loadingSetting ? "Memuat..." : registrationPeriod.label}
+            </div>
+            <div className="mt-1">
+              Mulai: {formatDateTime(submissionSetting?.registration_start)}
+            </div>
+            <div>
+              Selesai: {formatDateTime(submissionSetting?.registration_end)}
+            </div>
+          </div>
+
+          <div className={`rounded-lg border px-4 py-3 text-sm ${editPeriod.className}`}>
+            <div className="font-semibold">
+              Status edit: {loadingSetting ? "Memuat..." : editPeriod.label}
+            </div>
+            <div className="mt-1">
+              Mulai: {formatDateTime(submissionSetting?.edit_start)}
+            </div>
+            <div>
+              Selesai: {formatDateTime(submissionSetting?.edit_end)}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between gap-4 mb-6">
         <div className="w-full max-w-sm relative">
           <Search01Icon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -373,7 +574,8 @@ const SubmissionsPage = () => {
         <button
           type="button"
           onClick={goAdd}
-          className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-purple-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-800 transition"
+          disabled={loadingSetting || !registrationPeriod.allowed}
+          className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-purple-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-800 transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Add01Icon className="w-4 h-4" />
           Tambah Submisi
@@ -496,8 +698,9 @@ const SubmissionsPage = () => {
                         <button
                           type="button"
                           onClick={() => handleEdit(row)}
-                          className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-2 text-gray-700 hover:bg-gray-50 transition"
-                          title="Edit"
+                          disabled={loadingSetting || !editPeriod.allowed}
+                          className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-2 text-gray-700 hover:bg-gray-50 transition disabled:cursor-not-allowed disabled:opacity-50"
+                          title={editPeriod.allowed ? "Edit" : "Edit belum dibuka"}
                         >
                           <Edit02Icon className="w-4 h-4" />
                         </button>

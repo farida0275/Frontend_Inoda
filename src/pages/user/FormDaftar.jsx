@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
@@ -73,6 +73,72 @@ const bentukInovasiDaerahOptions = [
 
 const MAX_2MB = 2 * 1024 * 1024;
 
+const readResponseSafely = async (response) => {
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return await response.json();
+  }
+  return await response.text();
+};
+
+const getPeriodStatus = (start, end) => {
+  if (!start || !end) {
+    return {
+      allowed: false,
+      label: "Belum diatur",
+      className: "border-slate-200 bg-slate-50 text-slate-700",
+    };
+  }
+
+  const now = new Date();
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return {
+      allowed: false,
+      label: "Tanggal tidak valid",
+      className: "border-red-200 bg-red-50 text-red-700",
+    };
+  }
+
+  if (now < startDate) {
+    return {
+      allowed: false,
+      label: "Pendaftaran belum dibuka",
+      className: "border-amber-200 bg-amber-50 text-amber-700",
+    };
+  }
+
+  if (now > endDate) {
+    return {
+      allowed: false,
+      label: "Pendaftaran sudah ditutup",
+      className: "border-slate-200 bg-slate-100 text-slate-700",
+    };
+  }
+
+  return {
+    allowed: true,
+    label: "Pendaftaran dibuka",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  };
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+
+  return d.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const FormDaftar = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
@@ -80,6 +146,10 @@ const FormDaftar = () => {
   const [kategoriOptions, setKategoriOptions] = useState([]);
   const [loadingKategori, setLoadingKategori] = useState(false);
   const [kategoriError, setKategoriError] = useState("");
+
+  const [submissionSetting, setSubmissionSetting] = useState(null);
+  const [loadingSetting, setLoadingSetting] = useState(true);
+  const [settingError, setSettingError] = useState("");
 
   const navigate = useNavigate();
 
@@ -127,13 +197,15 @@ const FormDaftar = () => {
           },
         });
 
-        const result = await response.json();
+        const result = await readResponseSafely(response);
 
         if (!response.ok) {
           throw new Error(
-            result?.errors?.join(", ") ||
-              result?.message ||
-              "Gagal mengambil data kategori inovasi."
+            typeof result === "object"
+              ? result?.errors?.join(", ") ||
+                  result?.message ||
+                  "Gagal mengambil data kategori inovasi."
+              : "Response server bukan JSON saat mengambil kategori inovasi."
           );
         }
 
@@ -152,6 +224,66 @@ const FormDaftar = () => {
 
     fetchKategoriOptions();
   }, []);
+
+  useEffect(() => {
+    const fetchSubmissionSetting = async () => {
+      try {
+        setLoadingSetting(true);
+        setSettingError("");
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setSubmissionSetting(null);
+          setLoadingSetting(false);
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/submission-settings`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const result = await readResponseSafely(response);
+
+        if (response.status === 404) {
+          setSubmissionSetting(null);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            typeof result === "object"
+              ? result?.errors?.join(", ") ||
+                  result?.message ||
+                  "Gagal mengambil pengaturan periode."
+              : "Response server bukan JSON saat mengambil pengaturan periode."
+          );
+        }
+
+        setSubmissionSetting(result?.data || null);
+      } catch (error) {
+        console.error("Fetch submission setting error:", error);
+        setSettingError(
+          error.message || "Terjadi kesalahan saat mengambil pengaturan periode."
+        );
+        setSubmissionSetting(null);
+      } finally {
+        setLoadingSetting(false);
+      }
+    };
+
+    fetchSubmissionSetting();
+  }, []);
+
+  const registrationPeriod = useMemo(() => {
+    return getPeriodStatus(
+      submissionSetting?.registration_start,
+      submissionSetting?.registration_end
+    );
+  }, [submissionSetting]);
 
   const countWords = (text = "") => {
     return text.trim().split(/\s+/).filter(Boolean).length;
@@ -208,6 +340,8 @@ const FormDaftar = () => {
   };
 
   const nextStep = async () => {
+    if (loadingSetting || !registrationPeriod.allowed) return;
+
     const fields = stepFields[currentStep];
     const isValid = await trigger(fields);
     if (isValid) setCurrentStep((prev) => Math.min(prev + 1, steps.length));
@@ -241,6 +375,11 @@ const FormDaftar = () => {
       if (!token) {
         alert("Token login tidak ditemukan. Silakan login terlebih dahulu.");
         navigate("/login");
+        return;
+      }
+
+      if (loadingSetting || !registrationPeriod.allowed) {
+        alert("Pendaftaran belum dibuka");
         return;
       }
 
@@ -312,13 +451,15 @@ const FormDaftar = () => {
         body: formData,
       });
 
-      const result = await response.json();
+      const result = await readResponseSafely(response);
 
       if (!response.ok) {
         throw new Error(
-          result?.errors?.join(", ") ||
-            result?.message ||
-            "Gagal menyimpan data peserta."
+          typeof result === "object"
+            ? result?.errors?.join(", ") ||
+                result?.message ||
+                "Gagal menyimpan data peserta."
+            : "Response server bukan JSON saat menyimpan data peserta."
         );
       }
 
@@ -339,6 +480,37 @@ const FormDaftar = () => {
     watch("penghargaanFile")?.[0]?.name || "Belum ada file";
   const proposalName = watch("proposalFile")?.[0]?.name || "Belum ada file";
 
+  if (loadingSetting) {
+    return (
+      <div className="max-w-5xl mx-auto p-6">
+        <div className="rounded-xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500">
+          Memuat pengaturan pendaftaran...
+        </div>
+      </div>
+    );
+  }
+
+  if (!registrationPeriod.allowed) {
+    return (
+      <div className="max-w-5xl mx-auto p-6">
+        {settingError && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {settingError}
+          </div>
+        )}
+
+        <div className={`rounded-xl border px-5 py-5 ${registrationPeriod.className}`}>
+          <h1 className="text-xl font-bold mb-2">Pendaftaran belum dibuka</h1>
+          <p className="text-sm mb-3">Status: {registrationPeriod.label}</p>
+          <div className="text-sm space-y-1">
+            <div>Mulai: {formatDateTime(submissionSetting?.registration_start)}</div>
+            <div>Selesai: {formatDateTime(submissionSetting?.registration_end)}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="mb-8">
@@ -348,6 +520,26 @@ const FormDaftar = () => {
         <p className="text-sm text-gray-500">
           Lengkapi form berikut untuk menambahkan data inovasi.
         </p>
+      </div>
+
+      {settingError && (
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {settingError}
+        </div>
+      )}
+
+      <div
+        className={`mb-6 rounded-lg border px-4 py-3 text-sm ${registrationPeriod.className}`}
+      >
+        <div className="font-semibold">
+          Status pendaftaran: {registrationPeriod.label}
+        </div>
+        <div className="mt-1">
+          Mulai: {formatDateTime(submissionSetting?.registration_start)}
+        </div>
+        <div>
+          Selesai: {formatDateTime(submissionSetting?.registration_end)}
+        </div>
       </div>
 
       <div className="mb-10 relative">
@@ -803,17 +995,18 @@ const FormDaftar = () => {
                     {errors.linkVideo.message}
                   </p>
                 ) : (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Wajib diisi.
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Wajib diisi.</p>
                 )}
                 <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-slate-700 leading-6">
                   <p className="font-semibold text-slate-800">
-                    Kualitas inovasi daerah dapat dibuktikan dengan video penerapan inovasi daerah
-                    (2 Tahun Terakhir) (file MP4 maksimal ukuran video 100MB).
+                    Kualitas inovasi daerah dapat dibuktikan dengan video
+                    penerapan inovasi daerah (2 Tahun Terakhir) (file MP4
+                    maksimal ukuran video 100MB).
                   </p>
 
-                  <p className="mt-2 font-medium text-slate-800">Data Pendukung:</p>
+                  <p className="mt-2 font-medium text-slate-800">
+                    Data Pendukung:
+                  </p>
 
                   <p className="mt-1">
                     Ketentuan video memvisualisasikan 5 substansi:
@@ -828,8 +1021,8 @@ const FormDaftar = () => {
                   </ol>
 
                   <p className="mt-2">
-                    Video inovasi dilengkapi dengan cover thumbnail dan ada logo kemendagri
-                    dengan format jpg/jpeg/png.
+                    Video inovasi dilengkapi dengan cover thumbnail dan ada logo
+                    kemendagri dengan format jpg/jpeg/png.
                   </p>
                 </div>
               </div>

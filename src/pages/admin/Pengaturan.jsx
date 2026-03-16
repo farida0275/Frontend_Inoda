@@ -6,6 +6,7 @@ import {
   Lightbulb,
   Plus,
   ClipboardList,
+  CalendarDays,
 } from "lucide-react";
 
 import TambahUser from "./Form/tambahUser";
@@ -19,6 +20,8 @@ import UserTable from "./pengaturan/user";
 import BeritaTable from "./pengaturan/berita";
 import InovasiTable from "./pengaturan/inovasi";
 import PenugasanJuriTable from "./pengaturan/penugasanjuri";
+import PeriodeTable from "./pengaturan/periode";
+import EditPeriode from "./pengaturan/EditPeriode";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -27,6 +30,7 @@ const TABS = [
   { key: "berita", label: "Berita", icon: Newspaper },
   { key: "inovasi", label: "Inovasi", icon: Lightbulb },
   { key: "penugasan", label: "Penugasan Juri", icon: ClipboardList },
+  { key: "periode", label: "Periode Peserta", icon: CalendarDays },
 ];
 
 const SEED = {
@@ -113,6 +117,10 @@ const Pengaturan = () => {
   const [loadingInovasi, setLoadingInovasi] = useState(false);
   const [inovasiError, setInovasiError] = useState("");
 
+  const [loadingPeriode, setLoadingPeriode] = useState(false);
+  const [periodeError, setPeriodeError] = useState("");
+  const [periodeData, setPeriodeData] = useState(null);
+
   const [loadingPeserta, setLoadingPeserta] = useState(false);
   const [pesertaError, setPesertaError] = useState("");
 
@@ -137,12 +145,23 @@ const Pengaturan = () => {
   const [openEditInovasi, setOpenEditInovasi] = useState(false);
   const [selectedInovasi, setSelectedInovasi] = useState(null);
 
+  const [openEditPeriode, setOpenEditPeriode] = useState(false);
+  const [selectedPeriode, setSelectedPeriode] = useState(null);
+
   const tabLabel = useMemo(
     () => TABS.find((t) => t.key === activeTab)?.label || "Pengaturan",
     [activeTab]
   );
 
   const token = localStorage.getItem("token");
+
+  const readResponseSafely = async (response) => {
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      return await response.json();
+    }
+    return await response.text();
+  };
 
   const fetchUsers = async () => {
     try {
@@ -275,6 +294,56 @@ const Pengaturan = () => {
     }
   };
 
+  const fetchPeriode = async () => {
+    try {
+      setLoadingPeriode(true);
+      setPeriodeError("");
+
+      if (!token) {
+        throw new Error("Token login tidak ditemukan. Silakan login ulang.");
+      }
+
+      console.log("API_URL:", API_URL);
+      console.log("FETCH:", `${API_URL}/submission-settings`);
+
+      const response = await fetch(`${API_URL}/submission-settings`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await readResponseSafely(response);
+
+      if (response.status === 404) {
+        setPeriodeData(null);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          typeof result === "object"
+            ? result?.errors?.join(", ") ||
+                result?.message ||
+                "Gagal mengambil pengaturan periode."
+            : "Response server bukan JSON. Cek VITE_API_URL atau route backend."
+        );
+      }
+
+      const periode = result?.data || null;
+      setPeriodeData(periode);
+    } catch (err) {
+      console.error("Fetch periode error:", err);
+      setPeriodeError(
+        err.message || "Terjadi kesalahan saat mengambil pengaturan periode."
+      );
+      setPeriodeData(null);
+    } finally {
+      setLoadingPeriode(false);
+    }
+  };
+
   const fetchPeserta = async () => {
     try {
       setLoadingPeserta(true);
@@ -373,6 +442,7 @@ const Pengaturan = () => {
     fetchUsers();
     fetchBerita();
     fetchInovasi();
+    fetchPeriode();
     fetchPeserta();
     fetchPenugasan();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -382,6 +452,10 @@ const Pengaturan = () => {
   const beritaRows = useMemo(() => data.berita || [], [data.berita]);
   const inovasiRows = useMemo(() => data.inovasi || [], [data.inovasi]);
   const pesertaRows = useMemo(() => data.peserta || [], [data.peserta]);
+  const periodeRows = useMemo(
+    () => (periodeData ? [periodeData] : []),
+    [periodeData]
+  );
 
   const juriOptions = useMemo(
     () => userRows.filter((u) => u.role === "juri"),
@@ -442,8 +516,9 @@ const Pengaturan = () => {
     if (activeTab === "berita") return beritaRows;
     if (activeTab === "inovasi") return inovasiRows;
     if (activeTab === "penugasan") return penugasanRows;
+    if (activeTab === "periode") return periodeRows;
     return [];
-  }, [activeTab, userRows, beritaRows, inovasiRows, penugasanRows]);
+  }, [activeTab, userRows, beritaRows, inovasiRows, penugasanRows, periodeRows]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -509,6 +584,11 @@ const Pengaturan = () => {
     if (activeTab === "inovasi") {
       setOpenTambahInovasi(true);
     }
+  };
+
+  const handleTambahPeriode = () => {
+    setSelectedPeriode(null);
+    setOpenEditPeriode(true);
   };
 
   const handleAssignByInovasi = async () => {
@@ -783,6 +863,12 @@ const Pengaturan = () => {
     if (tabKey === "inovasi") {
       setSelectedInovasi(row);
       setOpenEditInovasi(true);
+      return;
+    }
+
+    if (tabKey === "periode") {
+      setSelectedPeriode(row);
+      setOpenEditPeriode(true);
     }
   };
 
@@ -792,6 +878,10 @@ const Pengaturan = () => {
     if (activeTab === "inovasi") return "Tambah Inovasi";
     return "Tambah Penugasan";
   }, [activeTab]);
+
+  const showSearchSection = activeTab !== "periode";
+  const showTambahButton =
+    activeTab !== "penugasan" && activeTab !== "periode";
 
   return (
     <div className="p-6">
@@ -834,36 +924,38 @@ const Pengaturan = () => {
         </div>
 
         <TableShell>
-          <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
-            <div className="flex w-full items-center gap-3">
-              <div className="relative w-full max-w-sm">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Pencarian..."
-                  className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+          {showSearchSection && (
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+              <div className="flex w-full items-center gap-3">
+                <div className="relative w-full max-w-sm">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="Pencarian..."
+                    className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div className="hidden text-xs text-slate-500 sm:block">
+                  Menu:{" "}
+                  <span className="font-semibold text-slate-700">{tabLabel}</span>{" "}
+                  • Total: <span className="font-semibold">{filtered.length}</span>
+                </div>
               </div>
 
-              <div className="hidden text-xs text-slate-500 sm:block">
-                Menu:{" "}
-                <span className="font-semibold text-slate-700">{tabLabel}</span>{" "}
-                • Total: <span className="font-semibold">{filtered.length}</span>
-              </div>
+              {showTambahButton && (
+                <button
+                  type="button"
+                  onClick={handleTambah}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-purple-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-purple-800"
+                >
+                  <Plus className="h-4 w-4" />
+                  {tambahLabel}
+                </button>
+              )}
             </div>
-
-            {activeTab !== "penugasan" && (
-              <button
-                type="button"
-                onClick={handleTambah}
-                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-purple-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-purple-800"
-              >
-                <Plus className="h-4 w-4" />
-                {tambahLabel}
-              </button>
-            )}
-          </div>
+          )}
 
           {activeTab === "user" && (
             <UserTable
@@ -915,6 +1007,16 @@ const Pengaturan = () => {
               pesertaError={pesertaError}
               penugasanError={penugasanError}
               handleHapus={handleHapus}
+            />
+          )}
+
+          {activeTab === "periode" && (
+            <PeriodeTable
+              loadingPeriode={loadingPeriode}
+              periodeError={periodeError}
+              filtered={filtered}
+              handleEdit={handleEdit}
+              handleTambahPeriode={handleTambahPeriode}
             />
           )}
         </TableShell>
@@ -995,6 +1097,16 @@ const Pengaturan = () => {
             : null
         }
         onSuccess={() => fetchInovasi()}
+      />
+
+      <EditPeriode
+        isOpen={openEditPeriode}
+        onClose={() => {
+          setOpenEditPeriode(false);
+          setSelectedPeriode(null);
+        }}
+        periodeData={selectedPeriode}
+        onSuccess={fetchPeriode}
       />
     </div>
   );
