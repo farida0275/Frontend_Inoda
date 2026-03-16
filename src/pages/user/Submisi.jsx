@@ -32,6 +32,19 @@ const getStatusBadgeClass = (status) => {
     return "bg-red-50 text-red-700 border border-red-200";
   }
 
+  if (
+    [
+      "Juara 1",
+      "Juara 2",
+      "Juara 3",
+      "Harapan 1",
+      "Harapan 2",
+      "Harapan 3",
+    ].includes(status)
+  ) {
+    return "bg-indigo-50 text-indigo-700 border border-indigo-200";
+  }
+
   return "bg-amber-50 text-amber-700 border border-amber-200";
 };
 
@@ -57,6 +70,54 @@ const getTahapBadgeClass = (tahap) => {
 
   return "bg-slate-50 text-slate-700 border border-slate-200";
 };
+
+const mapSubmissionRow = (item, kategoriMap) => ({
+  id: item.id,
+  namaPeserta: item.nama_inisiator || "-",
+  namaInovasi: item.nama_inovasi || "-",
+  kategoriNama: kategoriMap.get(String(item.kategori)) || "-",
+  tahapan: item.tahapan_inovasi || "-",
+  urusan: item.urusan_utama || "-",
+  waktuInisiatif: formatDate(item.waktu_pengembangan),
+  waktuUjiCoba: formatDate(item.waktu_uji_coba),
+  waktuPenerapan: formatDate(item.waktu_penerapan),
+  skor: Number(item.skor_final ?? 0),
+
+  statusSeleksi: item.status_seleksi || "Diproses",
+  tahapSeleksi: item.tahap_seleksi || "all",
+
+  kategori: item.kategori || "",
+  kategori_nama: kategoriMap.get(String(item.kategori)) || "-",
+  nama_pemda: item.nama_pemda || "",
+  nama_inovasi: item.nama_inovasi || "",
+  tahapan_inovasi: item.tahapan_inovasi || "",
+  inisiator_inovasi: item.inisiator_inovasi || "",
+  nama_inisiator: item.nama_inisiator || "",
+  no_hp: item.no_hp || "",
+  jenis_inovasi: item.jenis_inovasi || "",
+  bentuk_inovasi: item.bentuk_inovasi || "",
+  tematik: item.tematik || "",
+  urusan_utama: item.urusan_utama || "",
+  urusan_beririsan: item.urusan_beririsan || "",
+  waktu_uji_coba: item.waktu_uji_coba || "",
+  waktu_penerapan: item.waktu_penerapan || "",
+  waktu_pengembangan: item.waktu_pengembangan || "",
+  link_video: item.link_video || "",
+
+  kebaruan: item.kebaruan || "",
+  penjelasan_singkat_kebaruan: item.penjelasan_singkat_kebaruan || "",
+
+  rancangan_bangun: item.rancangan_bangun || "",
+  tujuan_inovasi: item.tujuan_inovasi || "",
+  manfaat_diperoleh: item.manfaat_diperoleh || "",
+  hasil_inovasi: item.hasil_inovasi || "",
+
+  anggaran_pdf: item.anggaran_pdf || "",
+  profil_bisnis_pdf: item.profil_bisnis_pdf || "",
+  dokumen_haki_pdf: item.dokumen_haki_pdf || "",
+  penghargaan_pdf: item.penghargaan_pdf || "",
+  proposal_pdf: item.proposal_pdf || "",
+});
 
 const SubmissionsPage = () => {
   const navigate = useNavigate();
@@ -130,49 +191,7 @@ const SubmissionsPage = () => {
           kategoriMap.set(String(item.id), item.name || "-");
         });
 
-        const mapped = list.map((item) => ({
-          id: item.id,
-          namaPeserta: item.nama_inisiator || "-",
-          namaInovasi: item.nama_inovasi || "-",
-          kategoriNama: kategoriMap.get(String(item.kategori)) || "-",
-          tahapan: item.tahapan_inovasi || "-",
-          urusan: item.urusan_utama || "-",
-          waktuInisiatif: formatDate(item.waktu_pengembangan),
-          waktuUjiCoba: formatDate(item.waktu_uji_coba),
-          waktuPenerapan: formatDate(item.waktu_penerapan),
-          skor: Number(item.skor_final ?? 0),
-
-          statusSeleksi: item.status_seleksi || "Diproses",
-          tahapSeleksi: item.tahap_seleksi || "all",
-
-          kategori: item.kategori || "",
-          kategori_nama: kategoriMap.get(String(item.kategori)) || "-",
-          nama_pemda: item.nama_pemda || "",
-          nama_inovasi: item.nama_inovasi || "",
-          tahapan_inovasi: item.tahapan_inovasi || "",
-          inisiator_inovasi: item.inisiator_inovasi || "",
-          nama_inisiator: item.nama_inisiator || "",
-          jenis_inovasi: item.jenis_inovasi || "",
-          bentuk_inovasi: item.bentuk_inovasi || "",
-          tematik: item.tematik || "",
-          urusan_utama: item.urusan_utama || "",
-          urusan_beririsan: item.urusan_beririsan || "",
-          waktu_uji_coba: item.waktu_uji_coba || "",
-          waktu_penerapan: item.waktu_penerapan || "",
-          waktu_pengembangan: item.waktu_pengembangan || "",
-          link_video: item.link_video || "",
-
-          rancangan_bangun: item.rancangan_bangun || "",
-          tujuan_inovasi: item.tujuan_inovasi || "",
-          manfaat_diperoleh: item.manfaat_diperoleh || "",
-          hasil_inovasi: item.hasil_inovasi || "",
-
-          anggaran_pdf: item.anggaran_pdf || "",
-          profil_bisnis_pdf: item.profil_bisnis_pdf || "",
-          dokumen_haki_pdf: item.dokumen_haki_pdf || "",
-          penghargaan_pdf: item.penghargaan_pdf || "",
-          proposal_pdf: item.proposal_pdf || "",
-        }));
+        const mapped = list.map((item) => mapSubmissionRow(item, kategoriMap));
 
         setRows(mapped);
         setInovasiList(inovasiData);
@@ -196,7 +215,23 @@ const SubmissionsPage = () => {
     if (!kw) return rows;
 
     return rows.filter((r) =>
-      `${r.namaPeserta} ${r.namaInovasi} ${r.kategoriNama} ${r.tahapan} ${r.urusan} ${r.waktuInisiatif} ${r.statusSeleksi} ${r.tahapSeleksi} ${r.link_video}`
+      [
+        r.namaPeserta,
+        r.namaInovasi,
+        r.kategoriNama,
+        r.tahapan,
+        r.urusan,
+        r.waktuInisiatif,
+        r.waktuUjiCoba,
+        r.waktuPenerapan,
+        r.statusSeleksi,
+        r.tahapSeleksi,
+        r.link_video,
+        r.no_hp,
+        r.kebaruan,
+        r.penjelasan_singkat_kebaruan,
+      ]
+        .join(" ")
         .toLowerCase()
         .includes(kw)
     );
@@ -234,6 +269,7 @@ const SubmissionsPage = () => {
       formData.append("tahapan_inovasi", form.tahapan_inovasi || "");
       formData.append("inisiator_inovasi", form.inisiator_inovasi || "");
       formData.append("nama_inisiator", form.nama_inisiator || "");
+      formData.append("no_hp", form.no_hp || "");
       formData.append("jenis_inovasi", form.jenis_inovasi || "");
       formData.append("bentuk_inovasi", form.bentuk_inovasi || "");
       formData.append("tematik", form.tematik || "");
@@ -251,6 +287,11 @@ const SubmissionsPage = () => {
         formData.append("waktu_pengembangan", form.waktu_pengembangan || "");
       }
 
+      formData.append("kebaruan", form.kebaruan || "");
+      formData.append(
+        "penjelasan_singkat_kebaruan",
+        form.penjelasan_singkat_kebaruan || ""
+      );
       formData.append("rancangan_bangun", form.rancangan_bangun || "");
       formData.append("tujuan_inovasi", form.tujuan_inovasi || "");
       formData.append("manfaat_diperoleh", form.manfaat_diperoleh || "");
@@ -291,59 +332,18 @@ const SubmissionsPage = () => {
       }
 
       const updated = result?.data;
-      const kategoriMap = new Map();
 
+      const kategoriMap = new Map();
       inovasiList.forEach((item) => {
         kategoriMap.set(String(item.id), item.name || "-");
       });
 
-      const normalizedUpdated = {
-        id: updated.id,
-        namaPeserta: updated.nama_inisiator || "-",
-        namaInovasi: updated.nama_inovasi || "-",
-        kategoriNama: kategoriMap.get(String(updated.kategori)) || "-",
-        tahapan: updated.tahapan_inovasi || "-",
-        urusan: updated.urusan_utama || "-",
-        waktuInisiatif: formatDate(updated.waktu_pengembangan),
-        waktuUjiCoba: formatDate(updated.waktu_uji_coba),
-        waktuPenerapan: formatDate(updated.waktu_penerapan),
-        skor: Number(updated.skor_final ?? 0),
-
-        statusSeleksi:
-          updated.status_seleksi || selectedRow.statusSeleksi || "Diproses",
-        tahapSeleksi: updated.tahap_seleksi || selectedRow.tahapSeleksi || "all",
-
-        kategori: updated.kategori || "",
-        kategori_nama: kategoriMap.get(String(updated.kategori)) || "-",
-        nama_pemda: updated.nama_pemda || "",
-        nama_inovasi: updated.nama_inovasi || "",
-        tahapan_inovasi: updated.tahapan_inovasi || "",
-        inisiator_inovasi: updated.inisiator_inovasi || "",
-        nama_inisiator: updated.nama_inisiator || "",
-        jenis_inovasi: updated.jenis_inovasi || "",
-        bentuk_inovasi: updated.bentuk_inovasi || "",
-        tematik: updated.tematik || "",
-        urusan_utama: updated.urusan_utama || "",
-        urusan_beririsan: updated.urusan_beririsan || "",
-        waktu_uji_coba: updated.waktu_uji_coba || "",
-        waktu_penerapan: updated.waktu_penerapan || "",
-        waktu_pengembangan: updated.waktu_pengembangan || "",
-        link_video: updated.link_video || "",
-
-        rancangan_bangun: updated.rancangan_bangun || "",
-        tujuan_inovasi: updated.tujuan_inovasi || "",
-        manfaat_diperoleh: updated.manfaat_diperoleh || "",
-        hasil_inovasi: updated.hasil_inovasi || "",
-
-        anggaran_pdf: updated.anggaran_pdf || "",
-        profil_bisnis_pdf: updated.profil_bisnis_pdf || "",
-        dokumen_haki_pdf: updated.dokumen_haki_pdf || "",
-        penghargaan_pdf: updated.penghargaan_pdf || "",
-        proposal_pdf: updated.proposal_pdf || "",
-      };
+      const normalizedUpdated = mapSubmissionRow(updated, kategoriMap);
 
       setRows((prev) =>
-        prev.map((item) => (item.id === selectedRow.id ? normalizedUpdated : item))
+        prev.map((item) =>
+          item.id === selectedRow.id ? normalizedUpdated : item
+        )
       );
 
       setSelectedRow(normalizedUpdated);
@@ -452,9 +452,15 @@ const SubmissionsPage = () => {
                     key={row.id}
                     className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60 transition"
                   >
-                    <td className="px-3 py-3 text-gray-900">{row.namaPeserta}</td>
-                    <td className="px-3 py-3 text-gray-900">{row.namaInovasi}</td>
-                    <td className="px-3 py-3 text-gray-900">{row.kategoriNama}</td>
+                    <td className="px-3 py-3 text-gray-900">
+                      {row.namaPeserta}
+                    </td>
+                    <td className="px-3 py-3 text-gray-900">
+                      {row.namaInovasi}
+                    </td>
+                    <td className="px-3 py-3 text-gray-900">
+                      {row.kategoriNama}
+                    </td>
                     <td className="px-3 py-3 text-gray-900">{row.tahapan}</td>
                     <td className="px-3 py-3 text-gray-900">{row.urusan}</td>
                     <td className="px-3 py-3 text-gray-900 whitespace-nowrap">

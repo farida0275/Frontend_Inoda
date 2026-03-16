@@ -9,6 +9,7 @@ import {
   ArrowLeft01Icon,
   Upload01Icon as UploadIcon,
   Link01Icon,
+  SmartPhone01Icon,
 } from "hugeicons-react";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -98,7 +99,10 @@ const FormDaftar = () => {
       astaCita: "",
       urusanUtama: "",
       urusanIrisan: "",
+      noHp: "",
       linkVideo: "",
+      kebaruan: "",
+      penjelasanSingkatKebaruan: "",
       rancangBangun: "",
       tujuan: "",
       manfaat: "",
@@ -153,6 +157,15 @@ const FormDaftar = () => {
     return text.trim().split(/\s+/).filter(Boolean).length;
   };
 
+  const validatePhone = (value) => {
+    if (!value || !value.trim()) return "No HP wajib diisi";
+    const cleaned = value.trim();
+    if (!/^[0-9+]{10,20}$/.test(cleaned)) {
+      return "No HP harus berisi angka dan boleh diawali +, panjang 10-20 karakter";
+    }
+    return true;
+  };
+
   const selectedTahap = watch("tahap");
   const selectedAstaCita = watch("astaCita");
 
@@ -173,12 +186,15 @@ const FormDaftar = () => {
       "bentukInovasiDaerah",
       "astaCita",
       "urusanUtama",
+      "noHp",
       "waktuInisiatif",
       "waktuUjiCoba",
       "waktuPenerapan",
     ],
     2: [
       "linkVideo",
+      "kebaruan",
+      "penjelasanSingkatKebaruan",
       "rancangBangun",
       "tujuan",
       "manfaat",
@@ -210,7 +226,6 @@ const FormDaftar = () => {
   const validateUrl = (value) => {
     if (!value || !value.trim()) return "Link video wajib diisi";
     try {
-      // eslint-disable-next-line no-new
       new URL(value);
       return true;
     } catch {
@@ -240,7 +255,13 @@ const FormDaftar = () => {
       formData.append("kategori", data.kategoriInovasi);
       formData.append("tematik", data.astaCita);
       formData.append("urusan_utama", data.urusanUtama);
+      formData.append("no_hp", data.noHp);
       formData.append("link_video", data.linkVideo);
+      formData.append("kebaruan", data.kebaruan);
+      formData.append(
+        "penjelasan_singkat_kebaruan",
+        data.penjelasanSingkatKebaruan
+      );
 
       if (data.urusanIrisan) {
         formData.append("urusan_beririsan", data.urusanIrisan);
@@ -403,6 +424,30 @@ const FormDaftar = () => {
                   {errors.namaInovasi && (
                     <p className="text-xs text-red-500 mt-1">
                       {errors.namaInovasi.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    No HP
+                  </label>
+
+                  <div className="relative">
+                    <SmartPhone01Icon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Masukkan nomor HP aktif..."
+                      className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                      {...register("noHp", {
+                        validate: validatePhone,
+                      })}
+                    />
+                  </div>
+
+                  {errors.noHp && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.noHp.message}
                     </p>
                   )}
                 </div>
@@ -766,6 +811,44 @@ const FormDaftar = () => {
 
               <div>
                 <label className="text-sm font-medium text-gray-700">
+                  Kebaruan / Keunikan / Keaslian Inovasi
+                </label>
+
+                <textarea
+                  placeholder="Tuliskan kebaruan, keunikan, atau keaslian inovasi..."
+                  className="mt-3 w-full h-32 rounded-lg border border-gray-300 px-4 py-3 text-sm leading-6 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-y"
+                  {...register("kebaruan", { required: "Wajib diisi" })}
+                />
+
+                {errors.kebaruan && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.kebaruan.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Penjelasan Singkat Bentuk Kebaruan atau Keunikan Inovasi
+                </label>
+
+                <textarea
+                  placeholder="Tuliskan penjelasan singkat bentuk kebaruan atau keunikan inovasi..."
+                  className="mt-3 w-full h-32 rounded-lg border border-gray-300 px-4 py-3 text-sm leading-6 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-y"
+                  {...register("penjelasanSingkatKebaruan", {
+                    required: "Wajib diisi",
+                  })}
+                />
+
+                {errors.penjelasanSingkatKebaruan && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.penjelasanSingkatKebaruan.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">
                   Rancang bangun (Minimal 300 kata)
                 </label>
 
@@ -990,7 +1073,7 @@ const FormDaftar = () => {
 
                 <div>
                   <label className="text-sm font-medium text-gray-700">
-                    Proposal — PDF maks 2MB
+                    File — PDF maks 2MB
                   </label>
 
                   <div className="mt-2 flex items-center gap-3">
@@ -1000,7 +1083,7 @@ const FormDaftar = () => {
                       accept="application/pdf"
                       className="hidden"
                       {...register("proposalFile", {
-                        required: "Proposal wajib diisi",
+                        required: "File wajib diisi",
                         validate: validatePdf2mb,
                       })}
                     />

@@ -28,6 +28,7 @@ const mapPenugasanItem = (item) => ({
   tahapan_inovasi: item.tahapan_inovasi || "-",
   inisiator_inovasi: item.inisiator_inovasi || "-",
   nama_inisiator: item.nama_inisiator || "-",
+  no_hp: item.no_hp || "",
   jenis_inovasi: item.jenis_inovasi || "-",
   bentuk_inovasi: item.bentuk_inovasi || "-",
   tematik: item.tematik || "-",
@@ -37,15 +38,21 @@ const mapPenugasanItem = (item) => ({
   waktu_uji_coba: item.waktu_uji_coba || "",
   waktu_penerapan: item.waktu_penerapan || "",
   link_video: item.link_video || "",
+
+  kebaruan: item.kebaruan || "",
+  penjelasan_singkat_kebaruan: item.penjelasan_singkat_kebaruan || "",
+
   rancangan_bangun: item.rancangan_bangun || "",
   tujuan_inovasi: item.tujuan_inovasi || "",
   manfaat_diperoleh: item.manfaat_diperoleh || "",
   hasil_inovasi: item.hasil_inovasi || "",
+
   anggaran_pdf: item.anggaran_pdf || "",
   profil_bisnis_pdf: item.profil_bisnis_pdf || "",
   dokumen_haki_pdf: item.dokumen_haki_pdf || "",
   penghargaan_pdf: item.penghargaan_pdf || "",
   proposal_pdf: item.proposal_pdf || "",
+
   kategori: item.kategori || "",
   kategori_nama: item.nama_kategori_inovasi || "-",
 });

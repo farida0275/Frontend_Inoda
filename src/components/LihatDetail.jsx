@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { X, Eye, Download, ExternalLink, Video } from "lucide-react";
+import { X, Eye, Download, ExternalLink, Video, Phone } from "lucide-react";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -221,6 +221,21 @@ const VideoLinkField = ({ label, url }) => {
   );
 };
 
+const PhoneField = ({ label, value }) => {
+  const hasValue = value && String(value).trim() !== "";
+
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-semibold text-slate-500">{label}</p>
+
+      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+        <Phone className="h-4 w-4 shrink-0 text-slate-500" />
+        <span className="text-sm text-slate-800">{hasValue ? value : "-"}</span>
+      </div>
+    </div>
+  );
+};
+
 const LihatDetail = ({ open, onClose, data }) => {
   useEffect(() => {
     if (!open) return;
@@ -278,6 +293,7 @@ const LihatDetail = ({ open, onClose, data }) => {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Nama Inisiator" value={d.nama_inisiator} />
                 <Field label="Nama Inovasi" value={d.nama_inovasi} />
+                <PhoneField label="No HP" value={d.no_hp} />
                 <Field label="Tahapan Inovasi" value={d.tahapan_inovasi} />
                 <Field
                   label="Inisiator Inovasi Daerah"
@@ -324,6 +340,14 @@ const LihatDetail = ({ open, onClose, data }) => {
               </h3>
 
               <div className="space-y-4">
+                <TextBox
+                  label="Kebaruan / Keunikan / Keaslian"
+                  value={d.kebaruan}
+                />
+                <TextBox
+                  label="Penjelasan Singkat Bentuk Kebaruan atau Keunikan Inovasi"
+                  value={d.penjelasan_singkat_kebaruan}
+                />
                 <TextBox label="Rancang Bangun" value={d.rancangan_bangun} />
                 <TextBox
                   label="Tujuan Inovasi Daerah"

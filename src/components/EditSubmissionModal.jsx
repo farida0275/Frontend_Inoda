@@ -7,6 +7,7 @@ import {
   FileText,
   ChevronDown,
   Link as LinkIcon,
+  Phone,
 } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -201,6 +202,7 @@ const EditSubmissionModal = ({
     tahapan_inovasi: "",
     inisiator_inovasi: "",
     nama_inisiator: "",
+    no_hp: "",
     jenis_inovasi: "",
     kategori: "",
     bentuk_inovasi: "",
@@ -211,6 +213,8 @@ const EditSubmissionModal = ({
     waktu_penerapan: "",
     waktu_pengembangan: "",
     link_video: "",
+    kebaruan: "",
+    penjelasan_singkat_kebaruan: "",
     rancangan_bangun: "",
     tujuan_inovasi: "",
     manfaat_diperoleh: "",
@@ -267,6 +271,7 @@ const EditSubmissionModal = ({
       tahapan_inovasi: data?.tahapan_inovasi || "",
       inisiator_inovasi: data?.inisiator_inovasi || "",
       nama_inisiator: data?.nama_inisiator || "",
+      no_hp: data?.no_hp || "",
       jenis_inovasi: data?.jenis_inovasi || "",
       kategori: data?.kategori ? String(data.kategori) : "",
       bentuk_inovasi: data?.bentuk_inovasi || "",
@@ -277,6 +282,8 @@ const EditSubmissionModal = ({
       waktu_penerapan: formatDateInput(data?.waktu_penerapan),
       waktu_pengembangan: formatDateInput(data?.waktu_pengembangan),
       link_video: data?.link_video || "",
+      kebaruan: data?.kebaruan || "",
+      penjelasan_singkat_kebaruan: data?.penjelasan_singkat_kebaruan || "",
       rancangan_bangun: data?.rancangan_bangun || "",
       tujuan_inovasi: data?.tujuan_inovasi || "",
       manfaat_diperoleh: data?.manfaat_diperoleh || "",
@@ -406,6 +413,15 @@ const EditSubmissionModal = ({
                     placeholder="Masukkan nama inisiator"
                   />
 
+                  <InputField
+                    label="No HP"
+                    name="no_hp"
+                    value={form.no_hp}
+                    onChange={handleChange}
+                    placeholder="Masukkan nomor HP"
+                    icon={Phone}
+                  />
+
                   <SelectField
                     label="Jenis Inovasi"
                     name="jenis_inovasi"
@@ -507,6 +523,24 @@ const EditSubmissionModal = ({
                 </h3>
 
                 <div className="space-y-4">
+                  <TextareaField
+                    label="Kebaruan / Keunikan / Keaslian"
+                    name="kebaruan"
+                    value={form.kebaruan}
+                    onChange={handleChange}
+                    placeholder="Tuliskan kebaruan, keunikan, atau keaslian inovasi"
+                    rows={5}
+                  />
+
+                  <TextareaField
+                    label="Penjelasan Singkat Bentuk Kebaruan atau Keunikan Inovasi"
+                    name="penjelasan_singkat_kebaruan"
+                    value={form.penjelasan_singkat_kebaruan}
+                    onChange={handleChange}
+                    placeholder="Tuliskan penjelasan singkat bentuk kebaruan atau keunikan inovasi"
+                    rows={5}
+                  />
+
                   <TextareaField
                     label="Rancang Bangun"
                     name="rancangan_bangun"

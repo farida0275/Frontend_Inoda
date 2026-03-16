@@ -116,10 +116,15 @@ const DataPeserta = () => {
           waktu_pengembangan: item.waktu_pengembangan || "",
 
           inisiator_inovasi: item.inisiator_inovasi || "",
+          no_hp: item.no_hp || "",
           jenis_inovasi: item.jenis_inovasi || "",
           bentuk_inovasi: item.bentuk_inovasi || "",
           tematik: item.tematik || "",
           link_video: item.link_video || "",
+
+          kebaruan: item.kebaruan || "",
+          penjelasan_singkat_kebaruan:
+            item.penjelasan_singkat_kebaruan || "",
 
           rancangan_bangun: item.rancangan_bangun || "",
           tujuan_inovasi: item.tujuan_inovasi || "",
@@ -168,7 +173,10 @@ const DataPeserta = () => {
         r.tahapan?.toLowerCase().includes(s) ||
         r.urusan?.toLowerCase().includes(s) ||
         r.waktuInisiatif?.toLowerCase().includes(s) ||
-        r.link_video?.toLowerCase().includes(s)
+        r.link_video?.toLowerCase().includes(s) ||
+        r.no_hp?.toLowerCase().includes(s) ||
+        r.kebaruan?.toLowerCase().includes(s) ||
+        r.penjelasan_singkat_kebaruan?.toLowerCase().includes(s)
       );
     });
   }, [q, rows]);

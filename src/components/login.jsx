@@ -63,14 +63,15 @@ const LoginPage = () => {
       const role = user.role?.toLowerCase();
 
       if (role === "admin") {
-        navigate("/admin");
+        navigate("/admin", { replace: true });
       } else if (role === "juri") {
-        navigate("/Juri/Penilaian");
-      } else if (role === "peserta") {
-        navigate("/participant");
+        navigate("/Juri/Penilaian", { replace: true });
+      } else if (role === "user" || role === "participant") {
+        navigate("/participant", { replace: true });
       } else {
-        navigate("/");
+        setServerError(`Role tidak dikenali: ${user?.role}`);
       }
+
     } catch (error) {
       console.error("Login error:", error);
       setServerError(error.message || "Login gagal, silakan coba lagi.");

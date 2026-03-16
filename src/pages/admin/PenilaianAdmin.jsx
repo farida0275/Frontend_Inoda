@@ -413,6 +413,7 @@ const PenilaianAdmin = () => {
         tahapan_inovasi: item.tahapan_inovasi || "-",
         inisiator_inovasi: item.inisiator_inovasi || "-",
         nama_inisiator: item.nama_inisiator || "-",
+        no_hp: item.no_hp || "",
         jenis_inovasi: item.jenis_inovasi || "-",
         bentuk_inovasi: item.bentuk_inovasi || "-",
         tematik: item.tematik || "-",
@@ -422,6 +423,11 @@ const PenilaianAdmin = () => {
         waktu_uji_coba: item.waktu_uji_coba || "",
         waktu_penerapan: item.waktu_penerapan || "",
         link_video: item.link_video || "",
+
+        kebaruan: item.kebaruan || "",
+        penjelasan_singkat_kebaruan:
+          item.penjelasan_singkat_kebaruan || "",
+
         rancangan_bangun: item.rancangan_bangun || "",
         tujuan_inovasi: item.tujuan_inovasi || "",
         manfaat_diperoleh: item.manfaat_diperoleh || "",
