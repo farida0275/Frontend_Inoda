@@ -19,6 +19,13 @@ const inputDateTimeValue = (value) => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
+const toISOStringSafe = (value) => {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+};
+
 const EditPeriode = ({ isOpen, onClose, periodeData, onSuccess }) => {
   const token = localStorage.getItem("token");
 
@@ -104,18 +111,20 @@ const EditPeriode = ({ isOpen, onClose, periodeData, onSuccess }) => {
         ? `${API_URL}/submission-settings/${periodeData.id}`
         : `${API_URL}/submission-settings`;
 
+      const payload = {
+        registration_start: toISOStringSafe(form.registration_start),
+        registration_end: toISOStringSafe(form.registration_end),
+        edit_start: toISOStringSafe(form.edit_start),
+        edit_end: toISOStringSafe(form.edit_end),
+      };
+
       const response = await fetch(endpoint, {
         method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          registration_start: form.registration_start,
-          registration_end: form.registration_end,
-          edit_start: form.edit_start,
-          edit_end: form.edit_end,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await readResponseSafely(response);

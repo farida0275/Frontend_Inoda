@@ -26,6 +26,20 @@ const formatDate = (value) => {
   });
 };
 
+const formatDateTime = (value) => {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+
+  return d.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const includesText = (value, keyword) =>
   String(value || "").toLowerCase().includes(keyword.toLowerCase());
 
@@ -39,11 +53,15 @@ const readResponseSafely = async (response) => {
   return await response.text();
 };
 
-const getPeriodStatus = (start, end) => {
+const getPeriodStatus = (start, end, type = "default") => {
   if (!start || !end) {
     return {
       allowed: false,
-      label: "Belum diatur",
+      label:
+        type === "edit"
+          ? "Periode edit belum diatur"
+          : "Periode pendaftaran belum diatur",
+      className: "border-slate-200 bg-slate-50 text-slate-700",
     };
   }
 
@@ -55,26 +73,30 @@ const getPeriodStatus = (start, end) => {
     return {
       allowed: false,
       label: "Tanggal tidak valid",
+      className: "border-red-200 bg-red-50 text-red-700",
     };
   }
 
   if (now < startDate) {
     return {
       allowed: false,
-      label: "Pendaftaran belum dibuka",
+      label: type === "edit" ? "Edit belum dibuka" : "Pendaftaran belum dibuka",
+      className: "border-amber-200 bg-amber-50 text-amber-700",
     };
   }
 
   if (now > endDate) {
     return {
       allowed: false,
-      label: "Pendaftaran sudah ditutup",
+      label: type === "edit" ? "Edit sudah ditutup" : "Pendaftaran sudah ditutup",
+      className: "border-slate-200 bg-slate-100 text-slate-700",
     };
   }
 
   return {
     allowed: true,
-    label: "Pendaftaran dibuka",
+    label: type === "edit" ? "Edit dibuka" : "Pendaftaran dibuka",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
   };
 };
 
@@ -86,6 +108,8 @@ const UserDashboard = () => {
   const [serverError, setServerError] = useState("");
 
   const [submissionSetting, setSubmissionSetting] = useState(null);
+  const [loadingSetting, setLoadingSetting] = useState(true);
+  const [settingError, setSettingError] = useState("");
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -161,6 +185,9 @@ const UserDashboard = () => {
   useEffect(() => {
     const fetchSubmissionSetting = async () => {
       try {
+        setLoadingSetting(true);
+        setSettingError("");
+
         const token = localStorage.getItem("token");
         if (!token) {
           setSubmissionSetting(null);
@@ -179,18 +206,41 @@ const UserDashboard = () => {
 
         if (response.status === 404) {
           setSubmissionSetting(null);
+          setSettingError("Periode pendaftaran belum diatur admin.");
+          return;
+        }
+
+        if (response.status === 401) {
+          setSubmissionSetting(null);
+          setSettingError("Sesi login berakhir. Silakan login ulang.");
+          return;
+        }
+
+        if (response.status === 403) {
+          setSubmissionSetting(null);
+          setSettingError("User tidak memiliki akses membaca pengaturan periode.");
           return;
         }
 
         if (!response.ok) {
-          setSubmissionSetting(null);
-          return;
+          throw new Error(
+            typeof result === "object"
+              ? result?.errors?.join(", ") ||
+                  result?.message ||
+                  "Gagal mengambil pengaturan periode."
+              : "Response server bukan JSON saat mengambil pengaturan periode."
+          );
         }
 
         setSubmissionSetting(result?.data || null);
       } catch (error) {
         console.error("Fetch submission setting error:", error);
+        setSettingError(
+          error.message || "Terjadi kesalahan saat mengambil pengaturan periode."
+        );
         setSubmissionSetting(null);
+      } finally {
+        setLoadingSetting(false);
       }
     };
 
@@ -200,7 +250,8 @@ const UserDashboard = () => {
   const registrationPeriod = useMemo(() => {
     return getPeriodStatus(
       submissionSetting?.registration_start,
-      submissionSetting?.registration_end
+      submissionSetting?.registration_end,
+      "daftar"
     );
   }, [submissionSetting]);
 
@@ -297,6 +348,26 @@ const UserDashboard = () => {
         </h1>
       </div>
 
+      {settingError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {settingError}
+        </div>
+      )}
+
+      <div
+        className={`rounded-lg border px-4 py-3 text-sm ${registrationPeriod.className}`}
+      >
+        <div className="font-semibold">
+          Status pendaftaran: {loadingSetting ? "Memuat..." : registrationPeriod.label}
+        </div>
+        <div className="mt-1">
+          Mulai: {formatDateTime(submissionSetting?.registration_start)}
+        </div>
+        <div>
+          Selesai: {formatDateTime(submissionSetting?.registration_end)}
+        </div>
+      </div>
+
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((item, i) => (
           <div
@@ -337,6 +408,7 @@ const UserDashboard = () => {
             type="button"
             disabled
             className="flex items-center justify-center gap-2 bg-gray-300 text-gray-600 px-4 py-2 rounded-lg shadow cursor-not-allowed"
+            title={registrationPeriod.label}
           >
             <Plus className="w-4 h-4" />
             Tambah Inovasi Daerah
@@ -367,36 +439,30 @@ const UserDashboard = () => {
 
           <tbody>
             {loading ? (
-              <tr className="border-t">
-                <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+              <tr>
+                <td colSpan="8" className="px-4 py-6 text-center text-gray-500">
                   Memuat data...
                 </td>
               </tr>
-            ) : filteredRows.length > 0 ? (
-              filteredRows.map((row) => (
-                <tr key={row.id} className="border-t hover:bg-gray-50">
+            ) : filteredRows.length === 0 ? (
+              <tr>
+                <td colSpan="8" className="px-4 py-6 text-center text-gray-500">
+                  Tidak ada data.
+                </td>
+              </tr>
+            ) : (
+              filteredRows.map((row, idx) => (
+                <tr key={row.id || idx} className="border-t">
                   <td className="px-4 py-3">{row.nama_inisiator || "-"}</td>
                   <td className="px-4 py-3">{row.nama_inovasi || "-"}</td>
                   <td className="px-4 py-3">{row.kategori_nama || "-"}</td>
                   <td className="px-4 py-3">{row.tahapan_inovasi || "-"}</td>
                   <td className="px-4 py-3">{row.urusan_utama || "-"}</td>
-                  <td className="px-4 py-3">
-                    {formatDate(row.waktu_pengembangan)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {formatDate(row.waktu_uji_coba)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {formatDate(row.waktu_penerapan)}
-                  </td>
+                  <td className="px-4 py-3">{formatDate(row.waktu_pengembangan)}</td>
+                  <td className="px-4 py-3">{formatDate(row.waktu_uji_coba)}</td>
+                  <td className="px-4 py-3">{formatDate(row.waktu_penerapan)}</td>
                 </tr>
               ))
-            ) : (
-              <tr className="border-t">
-                <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
-                  Tidak ada data peserta.
-                </td>
-              </tr>
             )}
           </tbody>
         </table>

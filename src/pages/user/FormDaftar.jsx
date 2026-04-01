@@ -71,6 +71,29 @@ const bentukInovasiDaerahOptions = [
   "Inovasi bentuk lainnya sesuai bidang urusan pemerintahan yang menjadi kewenangan Daerah",
 ];
 
+const indikatorDaerahOptions = [
+  "Regulasi inovasi daerah",
+  "Ketersediaan SDM terhadap inovasi daerah",
+  "Dukungan Anggaran",
+  "Bimtek inovasi",
+  "Integrasi Program dan kegiatan inovasi Perangkat Daerah dalam RKPD",
+  "Keterlibatan aktor inovasi",
+  "Pelaksana inovasi daerah",
+  "Jejaring inovasi",
+  "Sosialisasi Inovasi Daerah",
+  "Pedoman teknis",
+  "Kemudahan informasi layanan",
+  "Kecepatan penciptaan inovasi",
+  "Kemudahan Proses Inovasi yang Dihasilkan",
+  "Penyelesaian layanan pengaduan",
+  "Layanan Terintegrasi",
+  "Replikasi",
+  "Alat Kerja",
+  "Kemanfaatan inovasi",
+  "Monitoring dan Evaluasi Inovasi Daerah",
+  "Kualitas inovasi daerah",
+];
+
 const MAX_2MB = 2 * 1024 * 1024;
 
 const readResponseSafely = async (response) => {
@@ -81,11 +104,14 @@ const readResponseSafely = async (response) => {
   return await response.text();
 };
 
-const getPeriodStatus = (start, end) => {
+const getPeriodStatus = (start, end, type = "default") => {
   if (!start || !end) {
     return {
       allowed: false,
-      label: "Belum diatur",
+      label:
+        type === "edit"
+          ? "Periode edit belum diatur"
+          : "Periode pendaftaran belum diatur",
       className: "border-slate-200 bg-slate-50 text-slate-700",
     };
   }
@@ -159,6 +185,7 @@ const FormDaftar = () => {
     formState: { errors },
     trigger,
     watch,
+    setValue,
   } = useForm({
     defaultValues: {
       tahap: "Inisiatif",
@@ -166,6 +193,7 @@ const FormDaftar = () => {
       jenisInovasi: "Digital",
       kategoriInovasi: "",
       bentukInovasiDaerah: "",
+      indikatorDaerah: "",
       astaCita: "",
       urusanUtama: "",
       urusanIrisan: "",
@@ -250,6 +278,19 @@ const FormDaftar = () => {
 
         if (response.status === 404) {
           setSubmissionSetting(null);
+          setSettingError("Periode pendaftaran belum diatur admin.");
+          return;
+        }
+
+        if (response.status === 401) {
+          setSubmissionSetting(null);
+          setSettingError("Sesi login berakhir. Silakan login ulang.");
+          return;
+        }
+
+        if (response.status === 403) {
+          setSubmissionSetting(null);
+          setSettingError("User tidak memiliki akses membaca pengaturan periode.");
           return;
         }
 
@@ -281,7 +322,8 @@ const FormDaftar = () => {
   const registrationPeriod = useMemo(() => {
     return getPeriodStatus(
       submissionSetting?.registration_start,
-      submissionSetting?.registration_end
+      submissionSetting?.registration_end,
+      "daftar"
     );
   }, [submissionSetting]);
 
@@ -300,6 +342,24 @@ const FormDaftar = () => {
 
   const selectedTahap = watch("tahap");
   const selectedAstaCita = watch("astaCita");
+  const selectedKategoriId = watch("kategoriInovasi");
+
+  const selectedKategori = useMemo(() => {
+    return kategoriOptions.find(
+      (item) => String(item.id) === String(selectedKategoriId)
+    );
+  }, [kategoriOptions, selectedKategoriId]);
+
+  const isKategoriInovasiDaerah = useMemo(() => {
+    const kategoriName = selectedKategori?.name?.trim().toLowerCase() || "";
+    return kategoriName.includes("inovasi daerah");
+  }, [selectedKategori]);
+
+  useEffect(() => {
+    if (!isKategoriInovasiDaerah) {
+      setValue("indikatorDaerah", "");
+    }
+  }, [isKategoriInovasiDaerah, setValue]);
 
   const tahapLevel = {
     Inisiatif: 1,
@@ -322,6 +382,7 @@ const FormDaftar = () => {
       "waktuInisiatif",
       "waktuUjiCoba",
       "waktuPenerapan",
+      ...(isKategoriInovasiDaerah ? ["indikatorDaerah"] : []),
     ],
     2: [
       "linkVideo",
@@ -379,7 +440,7 @@ const FormDaftar = () => {
       }
 
       if (loadingSetting || !registrationPeriod.allowed) {
-        alert("Pendaftaran belum dibuka");
+        alert(registrationPeriod.label || "Pendaftaran belum dibuka");
         return;
       }
 
@@ -387,6 +448,11 @@ const FormDaftar = () => {
 
       formData.append("nama_inisiator", data.namaInisiator);
       formData.append("nama_inovasi", data.namaInovasi);
+
+      if (isKategoriInovasiDaerah) {
+        formData.append("indikator_daerah", data.indikatorDaerah || "");
+      }
+
       formData.append("tahapan_inovasi", data.tahap);
       formData.append("inisiator_inovasi", data.inisiatorKelompok);
       formData.append("jenis_inovasi", data.jenisInovasi);
@@ -500,7 +566,7 @@ const FormDaftar = () => {
         )}
 
         <div className={`rounded-xl border px-5 py-5 ${registrationPeriod.className}`}>
-          <h1 className="text-xl font-bold mb-2">Pendaftaran belum dibuka</h1>
+          <h1 className="text-xl font-bold mb-2">{registrationPeriod.label}</h1>
           <p className="text-sm mb-3">Status: {registrationPeriod.label}</p>
           <div className="text-sm space-y-1">
             <div>Mulai: {formatDateTime(submissionSetting?.registration_start)}</div>
@@ -807,6 +873,39 @@ const FormDaftar = () => {
                     )}
                   </div>
                 </div>
+
+                {isKategoriInovasiDaerah && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Indikator Daerah <span className="text-red-500">*</span>
+                    </label>
+
+                    <select
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                      {...register("indikatorDaerah", {
+                        validate: (value) => {
+                          if (isKategoriInovasiDaerah && !value) {
+                            return "Indikator daerah wajib dipilih untuk kategori Inovasi Daerah";
+                          }
+                          return true;
+                        },
+                      })}
+                    >
+                      <option value="">Silahkan Pilih</option>
+                      {indikatorDaerahOptions.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+
+                    {errors.indikatorDaerah && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.indikatorDaerah.message}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
@@ -1291,7 +1390,7 @@ const FormDaftar = () => {
 
                 <div>
                   <label className="text-sm font-medium text-gray-700">
-                    File — PDF maks 2MB
+                    Identitas Diri — PDF maks 2MB
                   </label>
 
                   <div className="mt-2 flex items-center gap-3">

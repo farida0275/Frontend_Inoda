@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   X,
   Save,
@@ -62,6 +62,29 @@ const bentukInovasiDaerahOptions = [
   "Inovasi Tata Kelola Pemerintahan Daerah",
   "Inovasi Pelayanan Publik",
   "Inovasi bentuk lainnya sesuai bidang urusan pemerintahan yang menjadi kewenangan Daerah",
+];
+
+const indikatorDaerahOptions = [
+  "Regulasi inovasi daerah",
+  "Ketersediaan SDM terhadap inovasi daerah",
+  "Dukungan Anggaran",
+  "Bimtek inovasi",
+  "Integrasi Program dan kegiatan inovasi Perangkat Daerah dalam RKPD",
+  "Keterlibatan aktor inovasi",
+  "Pelaksana inovasi daerah",
+  "Jejaring inovasi",
+  "Sosialisasi Inovasi Daerah",
+  "Pedoman teknis",
+  "Kemudahan informasi layanan",
+  "Kecepatan penciptaan inovasi",
+  "Kemudahan Proses Inovasi yang Dihasilkan",
+  "Penyelesaian layanan pengaduan",
+  "Layanan Terintegrasi",
+  "Replikasi",
+  "Alat Kerja",
+  "Kemanfaatan inovasi",
+  "Monitoring dan Evaluasi Inovasi Daerah",
+  "Kualitas inovasi daerah",
 ];
 
 const formatDateInput = (value) => {
@@ -206,6 +229,7 @@ const EditSubmissionModal = ({
     jenis_inovasi: "",
     kategori: "",
     bentuk_inovasi: "",
+    indikator_daerah: "",
     tematik: "",
     urusan_utama: "",
     urusan_beririsan: "",
@@ -263,6 +287,17 @@ const EditSubmissionModal = ({
     fetchKategoriOptions();
   }, []);
 
+  const selectedKategori = useMemo(() => {
+    return kategoriOptions.find(
+      (item) => String(item.id) === String(form.kategori)
+    );
+  }, [kategoriOptions, form.kategori]);
+
+  const isKategoriInovasiDaerah = useMemo(() => {
+    const kategoriName = selectedKategori?.name?.trim().toLowerCase() || "";
+    return kategoriName.includes("inovasi daerah");
+  }, [selectedKategori]);
+
   useEffect(() => {
     if (!open) return;
 
@@ -275,6 +310,7 @@ const EditSubmissionModal = ({
       jenis_inovasi: data?.jenis_inovasi || "",
       kategori: data?.kategori ? String(data.kategori) : "",
       bentuk_inovasi: data?.bentuk_inovasi || "",
+      indikator_daerah: data?.indikator_daerah || "",
       tematik: data?.tematik || "",
       urusan_utama: data?.urusan_utama || "",
       urusan_beririsan: data?.urusan_beririsan || "",
@@ -315,6 +351,15 @@ const EditSubmissionModal = ({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!isKategoriInovasiDaerah) {
+      setForm((prev) => ({
+        ...prev,
+        indikator_daerah: "",
+      }));
+    }
+  }, [isKategoriInovasiDaerah]);
+
   if (!open) return null;
 
   const handleChange = (e) => {
@@ -334,7 +379,13 @@ const EditSubmissionModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await onSave?.(form, data);
+
+    const payload = {
+      ...form,
+      indikator_daerah: isKategoriInovasiDaerah ? form.indikator_daerah : "",
+    };
+
+    await onSave?.(payload, data);
   };
 
   return (
@@ -446,6 +497,18 @@ const EditSubmissionModal = ({
                     onChange={handleChange}
                     options={bentukInovasiDaerahOptions}
                   />
+
+                  {isKategoriInovasiDaerah && (
+                    <div className="sm:col-span-2">
+                      <SelectField
+                        label="Indikator Daerah"
+                        name="indikator_daerah"
+                        value={form.indikator_daerah}
+                        onChange={handleChange}
+                        options={indikatorDaerahOptions}
+                      />
+                    </div>
+                  )}
 
                   <div className="sm:col-span-2">
                     <SelectField
@@ -615,7 +678,7 @@ const EditSubmissionModal = ({
                   />
 
                   <FileUploadField
-                    label="Proposal (PDF)"
+                    label="Identitas Diri (PDF)"
                     name="proposal_pdf"
                     fileUrl={existingFiles.proposal_pdf}
                     fileValue={form.proposal_pdf}

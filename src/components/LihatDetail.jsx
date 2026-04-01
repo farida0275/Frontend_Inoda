@@ -14,23 +14,6 @@ const formatDate = (value) => {
   });
 };
 
-const normalizeToArray = (value) => {
-  if (!value) return [];
-
-  if (Array.isArray(value)) {
-    return value.filter((item) => String(item).trim() !== "");
-  }
-
-  if (typeof value === "string") {
-    return value
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
-  return [value];
-};
-
 const Field = ({ label, value }) => (
   <div className="space-y-1">
     <p className="text-xs font-semibold text-slate-500">{label}</p>
@@ -39,33 +22,6 @@ const Field = ({ label, value }) => (
     </div>
   </div>
 );
-
-const ListField = ({ label, value }) => {
-  const items = normalizeToArray(value);
-
-  return (
-    <div className="space-y-1">
-      <p className="text-xs font-semibold text-slate-500">{label}</p>
-
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-        {items.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {items.map((item, index) => (
-              <span
-                key={`${item}-${index}`}
-                className="inline-flex rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-medium text-purple-700"
-              >
-                {item}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">-</p>
-        )}
-      </div>
-    </div>
-  );
-};
 
 const TextBox = ({ label, value }) => (
   <div className="space-y-1">
@@ -237,6 +193,17 @@ const PhoneField = ({ label, value }) => {
 };
 
 const LihatDetail = ({ open, onClose, data }) => {
+  const d = data || {};
+
+  const kategoriName = String(d.kategori_nama ?? d.kategori ?? "")
+    .trim()
+    .toLowerCase();
+
+  const isKategoriInovasiDaerah = kategoriName.includes("inovasi daerah");
+
+  const hasIndikatorDaerah =
+    d.indikator_daerah && String(d.indikator_daerah).trim() !== "";
+
   useEffect(() => {
     if (!open) return;
 
@@ -249,8 +216,6 @@ const LihatDetail = ({ open, onClose, data }) => {
   }, [open, onClose]);
 
   if (!open) return null;
-
-  const d = data || {};
 
   return (
     <div className="fixed inset-0 z-[999]">
@@ -308,6 +273,14 @@ const LihatDetail = ({ open, onClose, data }) => {
                   label="Bentuk Inovasi Daerah"
                   value={d.bentuk_inovasi}
                 />
+
+                {(hasIndikatorDaerah || isKategoriInovasiDaerah) && (
+                  <Field
+                    label="Indikator Daerah"
+                    value={d.indikator_daerah}
+                  />
+                )}
+
                 <Field label="Asta Cita" value={d.tematik} />
                 <Field label="Urusan Utama" value={d.urusan_utama} />
                 <Field
@@ -380,7 +353,7 @@ const LihatDetail = ({ open, onClose, data }) => {
                   label="Penghargaan — PDF"
                   file={d.penghargaan_pdf}
                 />
-                <FileChip label="Proposal — PDF" file={d.proposal_pdf} />
+                <FileChip label="Identitas Diri — PDF" file={d.proposal_pdf} />
               </div>
             </section>
           </div>

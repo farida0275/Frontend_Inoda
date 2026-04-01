@@ -49,7 +49,10 @@ const getPeriodStatus = (start, end, type = "default") => {
   if (!start || !end) {
     return {
       allowed: false,
-      label: "Belum diatur",
+      label:
+        type === "edit"
+          ? "Periode edit belum diatur"
+          : "Periode pendaftaran belum diatur",
       className: "border-slate-200 bg-slate-50 text-slate-700",
     };
   }
@@ -162,6 +165,7 @@ const mapSubmissionRow = (item, kategoriMap) => ({
   no_hp: item.no_hp || "",
   jenis_inovasi: item.jenis_inovasi || "",
   bentuk_inovasi: item.bentuk_inovasi || "",
+  indikator_daerah: item.indikator_daerah || "",
   tematik: item.tematik || "",
   urusan_utama: item.urusan_utama || "",
   urusan_beririsan: item.urusan_beririsan || "",
@@ -293,7 +297,6 @@ const SubmissionsPage = () => {
         const token = localStorage.getItem("token");
         if (!token) {
           setSubmissionSetting(null);
-          setLoadingSetting(false);
           return;
         }
 
@@ -309,6 +312,19 @@ const SubmissionsPage = () => {
 
         if (response.status === 404) {
           setSubmissionSetting(null);
+          setSettingError("Periode belum diatur admin.");
+          return;
+        }
+
+        if (response.status === 401) {
+          setSubmissionSetting(null);
+          setSettingError("Sesi login berakhir. Silakan login ulang.");
+          return;
+        }
+
+        if (response.status === 403) {
+          setSubmissionSetting(null);
+          setSettingError("User tidak memiliki akses membaca pengaturan periode.");
           return;
         }
 
@@ -373,6 +389,7 @@ const SubmissionsPage = () => {
         r.no_hp,
         r.kebaruan,
         r.penjelasan_singkat_kebaruan,
+        r.indikator_daerah,
       ]
         .join(" ")
         .toLowerCase()
@@ -382,11 +399,13 @@ const SubmissionsPage = () => {
 
   const goAdd = () => {
     if (loadingSetting) return;
+
     if (!registrationPeriod.allowed) {
-      alert("Pendaftaran belum dibuka");
+      alert(registrationPeriod.label || "Pendaftaran belum dibuka");
       return;
     }
-    navigate("/participant/add");
+
+    navigate("/FormDaftar");
   };
 
   const handleDetail = (row) => {
@@ -398,7 +417,7 @@ const SubmissionsPage = () => {
     if (loadingSetting) return;
 
     if (!editPeriod.allowed) {
-      alert("Edit belum dibuka");
+      alert(editPeriod.label || "Edit belum dibuka");
       return;
     }
 
@@ -424,7 +443,7 @@ const SubmissionsPage = () => {
       }
 
       if (!editPeriod.allowed) {
-        throw new Error("Edit belum dibuka");
+        throw new Error(editPeriod.label || "Edit belum dibuka");
       }
 
       const formData = new FormData();
@@ -437,6 +456,7 @@ const SubmissionsPage = () => {
       formData.append("no_hp", form.no_hp || "");
       formData.append("jenis_inovasi", form.jenis_inovasi || "");
       formData.append("bentuk_inovasi", form.bentuk_inovasi || "");
+      formData.append("indikator_daerah", form.indikator_daerah || "");
       formData.append("tematik", form.tematik || "");
       formData.append("urusan_utama", form.urusan_utama || "");
       formData.append("urusan_beririsan", form.urusan_beririsan || "");
@@ -576,6 +596,7 @@ const SubmissionsPage = () => {
           onClick={goAdd}
           disabled={loadingSetting || !registrationPeriod.allowed}
           className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-purple-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-800 transition disabled:cursor-not-allowed disabled:opacity-60"
+          title={registrationPeriod.label}
         >
           <Add01Icon className="w-4 h-4" />
           Tambah Submisi
@@ -589,138 +610,75 @@ const SubmissionsPage = () => {
       )}
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-white">
-              <tr className="border-b border-gray-100">
-                <th className="text-left font-semibold text-gray-700 px-3 py-3">
-                  Nama Peserta
-                </th>
-                <th className="text-left font-semibold text-gray-700 px-3 py-3">
-                  Nama Inovasi
-                </th>
-                <th className="text-left font-semibold text-gray-700 px-3 py-3">
-                  Kategori
-                </th>
-                <th className="text-left font-semibold text-gray-700 px-3 py-3">
-                  Tahapan
-                </th>
-                <th className="text-left font-semibold text-gray-700 px-3 py-3">
-                  Urusan
-                </th>
-                <th className="text-left font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
-                  Waktu Inisiatif
-                </th>
-                <th className="text-left font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
-                  Waktu Uji Coba
-                </th>
-                <th className="text-left font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
-                  Waktu Penerapan
-                </th>
-                <th className="text-left font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
-                  Tahap
-                </th>
-                <th className="text-left font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
-                  Status
-                </th>
-                <th className="text-center font-semibold text-gray-700 px-3 py-3 whitespace-nowrap">
-                  Aksi
-                </th>
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 text-slate-600">
+            <tr>
+              <th className="px-4 py-3 text-left">Nama Peserta</th>
+              <th className="px-4 py-3 text-left">Nama Inovasi</th>
+              <th className="px-4 py-3 text-left">Kategori</th>
+              <th className="px-4 py-3 text-left">Tahapan</th>
+              <th className="px-4 py-3 text-left">Status Seleksi</th>
+              <th className="px-4 py-3 text-left">Tahap Seleksi</th>
+              <th className="px-4 py-3 text-left">Aksi</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="7" className="px-4 py-6 text-center text-gray-500">
+                  Memuat data...
+                </td>
               </tr>
-            </thead>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="px-4 py-6 text-center text-gray-500">
+                  Belum ada data submission.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((row) => (
+                <tr key={row.id} className="border-t border-gray-100">
+                  <td className="px-4 py-3">{row.namaPeserta}</td>
+                  <td className="px-4 py-3">{row.namaInovasi}</td>
+                  <td className="px-4 py-3">{row.kategoriNama}</td>
+                  <td className="px-4 py-3">{row.tahapan}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusBadgeClass(row.statusSeleksi)}`}>
+                      {row.statusSeleksi}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getTahapBadgeClass(row.tahapSeleksi)}`}>
+                      {getTahapLabel(row.tahapSeleksi)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(row)}
+                        className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-2 text-gray-700 hover:bg-gray-50 transition"
+                        title="Edit Submission"
+                      >
+                        <Edit02Icon className="w-4 h-4" />
+                      </button>
 
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td
-                    colSpan={11}
-                    className="px-3 py-8 text-center text-gray-500"
-                  >
-                    Memuat data...
+                      <button
+                        type="button"
+                        onClick={() => handleDetail(row)}
+                        className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-2 text-gray-700 hover:bg-gray-50 transition"
+                        title="Lihat Detail"
+                      >
+                        <EyeIcon className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={11}
-                    className="px-3 py-8 text-center text-gray-500"
-                  >
-                    Data tidak ditemukan.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60 transition"
-                  >
-                    <td className="px-3 py-3 text-gray-900">
-                      {row.namaPeserta}
-                    </td>
-                    <td className="px-3 py-3 text-gray-900">
-                      {row.namaInovasi}
-                    </td>
-                    <td className="px-3 py-3 text-gray-900">
-                      {row.kategoriNama}
-                    </td>
-                    <td className="px-3 py-3 text-gray-900">{row.tahapan}</td>
-                    <td className="px-3 py-3 text-gray-900">{row.urusan}</td>
-                    <td className="px-3 py-3 text-gray-900 whitespace-nowrap">
-                      {row.waktuInisiatif}
-                    </td>
-                    <td className="px-3 py-3 text-gray-900 whitespace-nowrap">
-                      {row.waktuUjiCoba}
-                    </td>
-                    <td className="px-3 py-3 text-gray-900 whitespace-nowrap">
-                      {row.waktuPenerapan}
-                    </td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${getTahapBadgeClass(
-                          row.tahapSeleksi
-                        )}`}
-                      >
-                        {getTahapLabel(row.tahapSeleksi)}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${getStatusBadgeClass(
-                          row.statusSeleksi
-                        )}`}
-                      >
-                        {row.statusSeleksi}
-                      </span>
-                    </td>
-
-                    <td className="px-3 py-3">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(row)}
-                          disabled={loadingSetting || !editPeriod.allowed}
-                          className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-2 text-gray-700 hover:bg-gray-50 transition disabled:cursor-not-allowed disabled:opacity-50"
-                          title={editPeriod.allowed ? "Edit" : "Edit belum dibuka"}
-                        >
-                          <Edit02Icon className="w-4 h-4" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDetail(row)}
-                          className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-2 text-gray-700 hover:bg-gray-50 transition"
-                          title="Lihat Detail"
-                        >
-                          <EyeIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       <EditSubmissionModal
